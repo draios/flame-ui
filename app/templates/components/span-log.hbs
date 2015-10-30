@@ -1,6 +1,6 @@
 <div class="flex-scaffholding -column">
     {{#sd-panel-header}}
-        <label>
+        <span class="text">
             Logs for
             {{#sd-tabs-list as |list|}}
                 {{#sd-tab-item value="1" activeTab=list.activeTab activateTab="activateTab" registerTab="registerTab" targetObject=list}}
@@ -10,7 +10,7 @@
                     <button {{action "selectMode" 'SPAN_CHILD'}}>this span and children</button>
                 {{/sd-tab-item}}
             {{/sd-tabs-list}}
-        </label>
+        </span>
     {{/sd-panel-header}}
 
     {{#sd-panel-content class="flex-grow -no-padding -flexbox"}}
