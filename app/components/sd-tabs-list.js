@@ -18,10 +18,6 @@ export default Ember.Component.extend({
         return this.get('tabs.0');
     }),
 
-    teardown: Ember.on('willDestroyElement', function() {
-        this.set('tabs', Ember.A([]));
-    }),
-
     actions: {
         registerTab(tab) {
             this.get('tabs').pushObject(tab);
