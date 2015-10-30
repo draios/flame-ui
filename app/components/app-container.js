@@ -57,7 +57,16 @@ export default Ember.Component.extend({
         },
 
         changeAggregation(aggregation) {
-            this.send('selectTransaction', this.get('transaction'), aggregation);
+            var me          = this;
+            var transaction = this.get('transaction');
+
+            me.get('transactionStore').findTransaction(transaction, aggregation).then(function(result) {
+                setProperties(me, {
+                    transaction:        transaction,
+                    aggregation:        aggregation,
+                    transactionData:    result
+                });
+            });
         },
 
         selectSpan: function(span) {
