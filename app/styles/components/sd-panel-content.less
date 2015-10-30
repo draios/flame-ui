@@ -4,6 +4,10 @@
         padding: 0;
     }
 
+    &.-flexbox {
+        display: flex;
+    }
+
     // By default, set overflow auto to add scrollbars if content is too high
     // if you prefer a different behavior use the -overflow-x modifier
     overflow: auto;
@@ -15,7 +19,7 @@
             overflow: hidden;
         }
     }
-    > .table {
+    > .table, > .sd-table {
         margin-top: @margin-sm;
     }
 }

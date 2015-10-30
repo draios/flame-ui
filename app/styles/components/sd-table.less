@@ -1,0 +1,126 @@
+.sd-table {
+    // Variables
+    @row-hovered-bg:            fade(#000, 8%);
+    @row-selected-bg:           fade(@color-accent, 10%);
+    @row-selected-hovered-bg:   fade(@color-accent, 15%);
+    @compact-cell-padding:      1px;
+    @row-border-color:          #D9D9D9;
+
+    // Rulesets
+    position: relative;
+    display:  flex;
+    flex:     1 0 0;
+
+    // Child components
+    .table {
+        // Rulesets
+        width:        100%;
+        text-align:   left;
+        table-layout: fixed;
+        overflow:     auto;
+        overflow-x:   hidden;
+        overflow-y:   auto;
+
+        // Children selectors
+        .th, .td {
+            padding:        @padding-sm @padding-md;
+            vertical-align: middle;
+            .border(bottom, 1px, @row-border-color);
+            &.-number {
+                text-align: right;
+            }
+            &.-icon {
+                width:        1.2em;
+                text-align:   center;
+                font-size:    @icon-sm;
+                .border(right, 0);
+                .border(bottom, 1px, @row-border-color);
+                * {
+                    vertical-align: middle;
+                }
+            }
+        }
+        .thead {
+            font-weight: @semibold;
+            color:       @black-light;
+            .th {
+                .border(bottom, 1px, @row-border-color);
+                .border(right,  1px, @row-border-color);
+                &.-icon {
+                    &:extend(.table .th.-icon);
+                }
+                &:last-of-type {
+                    .border(right,  0);
+                    .border(bottom, 1px, @row-border-color);
+                }
+            }
+        }
+        .tbody {
+            .tr {
+                &.-link {
+                    cursor: pointer;
+                    &:hover {
+                        background-color: @row-hovered-bg;
+                    }
+                }
+                &.-selected {
+                    background-color: @row-selected-bg;
+                    &:hover {
+                        background-color: @row-selected-hovered-bg;
+                    }
+                }
+                .td {
+
+                }
+                &:last-of-type .td {
+                    border-color: transparent;
+                }
+            }
+        }
+        .thead, .tr {
+            &.-no-border {
+                .th, .td {
+                    border-bottom: 0;
+                }
+            }
+        }
+        .-compact {
+            &.tbody .td, &.thead .th {
+                padding-top: @compact-cell-padding;
+                padding-bottom: @compact-cell-padding;
+            }
+        }
+    }
+
+    // Tese rulesets are the ones used to make the table scrollable having the header sticky on top
+    .sd-table-inner {
+        overflow:   auto;
+        flex:       1 0 0;
+        margin-top: calc(~"1em + " @padding-sm * 2);
+        &:before {
+            content:        "";
+            height:         calc(~"1em + " @padding-sm * 2);
+            display:        block;
+            position:       absolute;
+            top:            0;
+            left:           0;
+            right:          0;
+            background:     #FFF;
+            .border(bottom, 1px, @row-border-color);
+        }
+        .th {
+            padding: 0;
+            .th-inner {
+                padding:        @padding-sm @padding-md;
+                position:       absolute;
+                top:            0;
+                .border(right, 1px, @row-border-color);
+            }
+            &:last-of-type .th-inner {
+                .border(right, 0);
+            }
+        }
+    }
+
+
+}

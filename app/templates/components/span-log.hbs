@@ -13,14 +13,22 @@
         </label>
     {{/sd-panel-header}}
 
-    {{#sd-panel-content class="flex-grow -no-padding"}}
-        <table class="table">
+    {{#sd-panel-content class="flex-grow -no-padding -flexbox"}}
+        {{#sd-table sticky=true}}
             <thead class="thead">
                 <th class="th -icon"></th>
-                <th class="th -string">Container</th>
-                <th class="th -string">K</th>
-                <th class="th -number">Date and Time</th>
-                <th class="th -string" colspan="3">Message</th>
+                <th class="th -string">
+                    <div class="th-inner">Container</div>
+                </th>
+                <th class="th -string">
+                    <div class="th-inner">K</div>
+                        </th>
+                <th class="th -number">
+                    <div class="th-inner">Date and Time</div>
+                </th>
+                <th class="th -string" colspan="3">
+                    <div class="th-inner">Message</div>
+                </th>
             </thead>
             <tbody class="tbody -compact">
                 {{#each lines key="@index" as |line|}}
@@ -33,6 +41,6 @@
                     </tr>
                 {{/each}}
             </tbody>
-        </table>
+        {{/sd-table}}
     {{/sd-panel-content}}
 </div>

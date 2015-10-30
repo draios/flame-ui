@@ -1,0 +1,12 @@
+// Apply a border to the element using a background gradient instead of using the `border` property.
+// this is extremely useful when you need to keep the extact same size to your element and `box-sizing` doesn't
+// help, or when you need to make one of the borders overlap the other (instead of make their edges "oblique")
+.border(@position, @width: 1px, @color: transparent) {
+    background-image+: linear-gradient(@color, @color);
+    background-size+: 1px @width;
+    .if(@position, bottom, background-repeat, repeat-x);
+    .if(@position, top,    background-repeat, repeat-x);
+    .if(@position, left,   background-repeat, repeat-y);
+    .if(@position, right,  background-repeat, repeat-y);
+    background-position+: @position;
+}

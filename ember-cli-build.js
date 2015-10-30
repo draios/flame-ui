@@ -18,10 +18,16 @@ module.exports = function(defaults) {
         }
     });
 
+    // D3
     app.import(app.bowerDirectory + '/d3/d3.v2.js');
+
+    // Reset CSS
     app.import(app.bowerDirectory + '/reset-css/reset.css');
 
-    // Copy Roboto webfont:
+    // eq.js
+    app.import(app.bowerDirectory + '/eq.js/build/eq.js');
+
+    // Roboto webfont
     var robotoFontAsset = new Funnel('vendor/roboto', {
         srcDir: '/',
         include: ['*.woff', '*.woff2', '*.eot', '*.svg', '*.ttf'],
@@ -29,6 +35,7 @@ module.exports = function(defaults) {
     });
     app.import('vendor/roboto/stylesheet.css');
 
+    // Material Design icons
     var materialIconsAsset = new Funnel(app.bowerDirectory + '/material-design-icons-iconfont/dist/fonts', {
         srcDir: '/',
         include: ['*.woff', '*.woff2', '*.eot', '*.ttf'],

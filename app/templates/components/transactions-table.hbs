@@ -2,14 +2,24 @@
     <h1 class="title">Transactions</h1>
 {{/sd-panel-header}}
 
-{{#sd-panel-content class="-no-padding"}}
-    <table class="table">
+{{#sd-panel-content class="-no-padding -flexbox"}}
+    {{#sd-table sticky=true}}
         <thead class="thead">
-            <th class="th -string">Node</th>
-            <th class="th -number">Calls</th>
-            <th class="th -number">Avg Time</th>
-            <th class="th -number">Min Time</th>
-            <th class="th -number">Max Time</th>
+            <th class="th -string">
+                <div class="th-inner">Node</div>
+            </th>
+            <th class="th -number">
+                <div class="th-inner">Calls</div>
+            </th>
+            <th class="th -number">
+                <div class="th-inner">Avg Time</div>
+            </th>
+            <th class="th -number">
+                <div class="th-inner">Min Time</div>
+            </th>
+            <th class="th -number">
+                <div class="th-inner">Max Time</div>
+            </th>
         </thead>
         <tbody class="tbody">
             {{#each transactions as |transaction|}}
@@ -22,5 +32,5 @@
                 </tr>
             {{/each}}
         </tbody>
-    </table>
+    {{/sd-table}}
 {{/sd-panel-content}}
