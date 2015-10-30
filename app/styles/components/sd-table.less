@@ -47,7 +47,7 @@
                 .border(bottom, 1px, @row-border-color);
                 .border(right,  1px, @row-border-color);
                 &.-icon {
-                    &:extend(.table .th.-icon);
+                    &:extend(.sd-table .table .th.-icon);
                 }
                 &:last-of-type {
                     .border(right,  0);
@@ -80,7 +80,7 @@
         .thead, .tr {
             &.-no-border {
                 .th, .td {
-                    border-bottom: 0;
+                    .border(bottom, 0);
                 }
             }
         }
