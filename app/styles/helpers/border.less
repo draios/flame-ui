@@ -4,9 +4,9 @@
 .border(@position, @width: 1px, @color: transparent) {
     background-image+: linear-gradient(@color, @color);
     background-size+: 1px @width;
-    .if(@position, bottom, background-repeat, repeat-x);
-    .if(@position, top,    background-repeat, repeat-x);
-    .if(@position, left,   background-repeat, repeat-y);
-    .if(@position, right,  background-repeat, repeat-y);
+    & when (@position = bottom) { background-repeat+: repeat-x; }
+    & when (@position = top)    { background-repeat+: repeat-x; }
+    & when (@position = left)   { background-repeat+: repeat-y; }
+    & when (@position = right)  { background-repeat+: repeat-y; }
     background-position+: @position;
 }
