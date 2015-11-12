@@ -22,38 +22,44 @@ export default Ember.Component.extend({
         });
     },
 
+    didInitAttrs: function() {
+        this.selectTransaction(this.get('transactions')[0].node);
+    },
+
     chartPanelSize: Ember.computed('span', function() {
         return (this.get('span')) ? 'row-2' : 'row-3';
     }),
 
+    selectTransaction: function(transaction, aggregation) {
+        var me = this;
+        var currentAggregation = aggregation || get(me, 'aggregation') || 'avg';
+
+        if (get(me, 'transaction') !== transaction || get(me, 'aggregation') !== currentAggregation) {
+            setProperties(me, {
+                transaction: transaction,
+                aggregation: currentAggregation,
+                span:        null,
+            });
+
+            me.get('transactionStore').findTransaction(transaction, currentAggregation).then(function(result) {
+                setProperties(me, {
+                    transaction:        transaction,
+                    aggregation:        currentAggregation,
+                    transactionData:    result
+                });
+            });
+        } else {
+            setProperties(me, {
+                transaction:        null,
+                transactionData:    null,
+                span:               null
+            });
+        }
+    },
+
     actions: {
-        selectTransaction: function(transaction, aggregation, defer) {
-            var me = this;
-            var currentAggregation = aggregation || get(this, 'aggregation') || 'avg';
-
-            if (get(this, 'transaction') !== transaction || get(this, 'aggregation') !== currentAggregation) {
-                setProperties(me, {
-                    transaction: transaction,
-                    aggregation: currentAggregation,
-                    span:        null,
-                });
-
-                me.get('transactionStore').findTransaction(transaction, currentAggregation).then(function(result) {
-                    setProperties(me, {
-                        transaction:        transaction,
-                        aggregation:        currentAggregation,
-                        transactionData:    result
-                    });
-                });
-                if (defer) { defer.resolve(); }
-            } else {
-                setProperties(me, {
-                    transaction:        null,
-                    transactionData:    null,
-                    span:               null
-                });
-                if (defer) { defer.reject(); }
-            }
+        selectTransaction: function(transaction, aggregation) {
+            this.selectTransaction(transaction, aggregation);
         },
 
         changeAggregation(aggregation) {
