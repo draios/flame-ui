@@ -10,6 +10,10 @@ You will need the following things properly installed on your computer.
 * [Ember CLI](http://www.ember-cli.com/)
 * [PhantomJS](http://phantomjs.org/)
 
+## Try it!
+
+https://rawgit.com/draios/flame-ui/master/build/index.html
+
 ## Installation
 
 * `git clone <repository-url>` this repository
