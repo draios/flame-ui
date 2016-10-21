@@ -1,4 +1,6765 @@
-"use strict";define("flame-ui/app",["exports","ember","ember/resolver","ember/load-initializers","flame-ui/config/environment"],function(e,t,n,r,a){var c;t["default"].MODEL_FACTORY_INJECTIONS=!0,c=t["default"].Application.extend({modulePrefix:a["default"].modulePrefix,podModulePrefix:a["default"].podModulePrefix,Resolver:n["default"]}),r["default"](c,a["default"].modulePrefix),d3.entries=function(e){var t=[];for(var n in e)e.hasOwnProperty(n)&&t.push({key:n,value:e[n]});return t},e["default"]=c}),define("flame-ui/components/app-container",["exports","ember"],function(e,t){var n=t["default"].get,r=t["default"].set,a=t["default"].setProperties;e["default"]=t["default"].Component.extend({transactionStore:t["default"].inject.service(),classNames:["sd-app-container"],init:function(){this._super.apply(this,arguments),a(this,{transaction:null,aggregation:null,transactionData:null,span:null,spanMode:null,spanLog:null})},didInitAttrs:function(){this.selectTransaction(this.get("transactions")[0].node)},chartPanelSize:t["default"].computed("span",function(){return this.get("span")?"row-2":"row-3"}),selectTransaction:function(e,t){var r=this,c=t||n(r,"aggregation")||"avg";n(r,"transaction")!==e||n(r,"aggregation")!==c?(a(r,{transaction:e,aggregation:c,span:null}),r.get("transactionStore").findTransaction(e,c).then(function(t){a(r,{transaction:e,aggregation:c,transactionData:t})})):a(r,{transaction:null,transactionData:null,span:null})},actions:{selectTransaction:function(e,t){this.selectTransaction(e,t)},changeAggregation:function(e){var t=this,n=this.get("transaction");t.get("transactionStore").findTransaction(n,e).then(function(r){a(t,{transaction:n,aggregation:e,transactionData:r})})},selectSpan:function(e){var t=this,r=n(this,"spanMode")||"SPAN";n(t,"span")!==e?(a(t,{span:e,spanMode:r}),n(t,"transactionStore").findSpanLog(e,r).then(function(n){a(t,{span:e,spanMode:r,spanLog:n})})):a(t,{span:null,spanMode:null,spanLog:null})},selectSpanMode:function(e){var t=this,c=n(this,"span");r(this,"spanMode",e),n(t,"transactionStore").findSpanLog(c,e).then(function(n){a(t,{span:c,spanMode:e,spanLog:n})})}}})}),define("flame-ui/components/app-version",["exports","ember-cli-app-version/components/app-version","flame-ui/config/environment"],function(e,t,n){var r=n["default"].APP,a=r.name,c=r.version;e["default"]=t["default"].extend({version:c,name:a})}),define("flame-ui/components/flame-ui",["exports","ember","flame-ui/components/sd-panel","flame-ui/helpers/fmt-time-interval","flame-ui/lib/flame-graph"],function(e,t,n,r,a){var c=t["default"].get,o=t["default"].set,l=t["default"].setProperties;e["default"]=n["default"].extend({colorStore:t["default"].inject.service("color-store"),classNames:["flame-ui"],aggregationOptions:t["default"].A([{value:"avg",name:"Average"},{value:"min",name:"Minimum"},{value:"max",name:"Maximum"}]),init:function(){this._super();var e=this;l(e,{activeSpan:null,chart:null,detailMode:"popout",chartContext:{detailClose:function(){var t=d3.select("#"+e.$().attr("id")+" #svPopout");"zoom"!==c(e,"detailMode")?(t.html(""),t.style("opacity",null),t.style("z-index",null)):c(e,"chart").zoomSet({x:0,dx:1,y:0})},detailOpen:function(t){function n(e){var t,n;for(t={},t[e.data.key]=e.data.value;void 0!==e.parent;)n=t,t={},t[e.parent.data.key]={t:e.parent.data.value.t,svTotal:e.parent.data.value.svTotal,ch:n},e=e.parent;return t}var r=d3.select("#"+e.$().attr("id")+" #svPopout");"zoom"!==c(e,"detailMode")?(r.html(""),new a["default"](r,n(t),null,null,c(e,"chartContext"),{getNodeColor:e.getNodeColor.bind(e)}),r.style("z-index",1),r.style("opacity",1)):c(e,"chart").zoomSet(t)},mouseout:function(){t["default"].run(function(){o(e,"activeSpan",null)})},mouseover:function(n,a){t["default"].run(function(){o(e,"activeSpan",{name:a.label,container:n.data.value.cont,commandLine:n.data.value.exe,timeTotal:r["default"](n.data.value.tt,3,1).output,timeInNode:r["default"](n.data.value.t,3,1).output,childCount:n.data.value.nconc})})},select:function(n){t["default"].run(function(){e.sendAction("select",n)})}}})},didInsertElement:function(){this.attrs.data.value&&this.renderChart(this.attrs.data.value,this.attrs.node.value)},didUpdateAttrs:function(e){o(this,"activeSpan",null),e.newAttrs.data.value!==e.oldAttrs.data.value&&(this.destroyChart(),e.newAttrs.data.value&&this.renderChart(e.newAttrs.data.value,e.newAttrs.node.value))},renderChart:function(e){o(this,"chart",new a["default"](d3.select("#"+this.$().attr("id")+" #chart"),e,null,null,c(this,"chartContext"),{axisLabels:!0,getNodeColor:this.getNodeColor.bind(this)}))},destroyChart:function(){d3.select("#"+this.$().attr("id")+" #chart").html("")},getNodeColor:function(e){return c(this,"colorStore").assignColor(e)},containerNameList:t["default"].computed("data",function(){function e(r){var a,c,o=Object.keys(r);for(a=0,c=o.length;c>a;a++)r[o[a]].cont&&void 0===n[r[o[a]].cont]&&(n[r[o[a]].cont]=!0,t.push(r[o[a]].cont)),r[o[a]].cont&&r[o[a]].ch&&e(r[o[a]].ch)}var t=[],n={};return this.attrs.data.value&&e(this.attrs.data.value[""].ch),t}),legendItems:t["default"].computed("containerNameList",function(){return c(this,"containerNameList").map(function(e){return{name:e,color:new t["default"].Handlebars.SafeString("color: "+c(this,"colorStore").assignColor(e))}},this)}),actions:{changeAggregation:function(e){this.sendAction("changeAggregation",e)}}})}),define("flame-ui/components/input-toggle",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({tagName:"label",classNames:["input-toggle"],input:t["default"].$(),didInsertElement:function(){this.set("input",this.$("input"))},actions:{toggle:function(){var e=this.get("input");e.is(":disabled")||(this.toggleProperty("checked"),e.trigger("change"),t["default"].run.next(this,function(){this.sendAction("onChange",this.get("checked"))}))}}})}),define("flame-ui/components/sd-dropdown-item",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({tagName:"li",classNameBindings:["item.hidden:-hidden"],selectedOption:null,isSelected:t["default"].computed("selectedOption",function(){return this.get("selectedOption")===this.get("item.value")}),actions:{selectOption:function(e){this.sendAction("selectOption",e)},setDropdownStatus:function(e){this.sendAction("setDropdownStatus",e)}}})}),define("flame-ui/components/sd-dropdown-trigger",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({tagName:"button",click:function(){this.send("toggleDropdown")},actions:{toggleDropdown:function(){this.sendAction("toggleDropdown")}}})}),define("flame-ui/components/sd-dropdown",["exports","ember","flame-ui/mixins/clickElseWhere"],function(e,t,n){e["default"]=t["default"].Component.extend(n["default"],{classNames:["sd-dropdown-wrapper"],classNameBindings:["isDropdownOpen:-open"],items:t["default"].A(),isDropdownOpen:!1,selectedOption:null,label:"Dropdown",action:"select",onClickElsewhere:function(e){var n=t["default"].$(e.target);0!==t["default"].$(document).find(n).length&&this.$()&&0===this.$().has(n).length&&this.send("setDropdownStatus",!1)},actions:{toggleDropdown:function(){this.toggleProperty("isDropdownOpen")},setDropdownStatus:function(e){this.set("isDropdownOpen",e)},selectOption:function(e){this.sendAction(this.get("action"),e),this.set("selectedOption",e),this.send("setDropdownStatus",!1)}}})}),define("flame-ui/components/sd-header",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({tagName:"header",classNames:["sd-header"]})}),define("flame-ui/components/sd-panel-content",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({classNames:["sd-panel-content"]})}),define("flame-ui/components/sd-panel-footer",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({classNames:["sd-panel-footer"]})}),define("flame-ui/components/sd-panel-header",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({classNames:["sd-panel-header"]})}),define("flame-ui/components/sd-panel-sidebar",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({classNames:["sd-panel-sidebar"],classNameBindings:["collapsed:-collapsed"]})}),define("flame-ui/components/sd-panel",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({classNames:["sd-panel"]})}),define("flame-ui/components/sd-tab-item",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({tagName:"li",classNames:["sd-tab-item"],classNameBindings:["isActive:-active"],value:null,setup:t["default"].on("didInsertElement",function(){this.send("registerTab")}),isActive:t["default"].computed("activeTab",function(){return this.get("activeTab")===this.get("value")}),click:function(){this.send("activateTab")},actions:{registerTab:function(){this.sendAction("registerTab",this.get("value"))},activateTab:function(){this.sendAction("activateTab",this.get("value"))}}})}),define("flame-ui/components/sd-table",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({classNames:["sd-table","table-container"],attributeBindings:["eqPts:data-eq-pts"],sticky:!1,hasStickHeader:t["default"].computed.oneWay("sticky"),eqPts:"x:0",setupThead:t["default"].on("didInsertElement",function(){this.updateThead(this.$(".thead")),this.$().on("eqResize",function(){this.updateThead(this.$(".thead"))}.bind(this))}),updateThead:function(e){e.find("th").each(function(e,t){var n=this.$(t),r=n.find(".th-inner")[0],a=n.width(),c=r?window.getComputedStyle(r).getPropertyValue("padding-left").slice(0,-2):0,o=r?window.getComputedStyle(r).getPropertyValue("padding-right").slice(0,-2):0;n.find(".th-inner").width(a-c-o)}.bind(this))}})}),define("flame-ui/components/sd-tabs-list",["exports","ember"],function(e,t){e["default"]=t["default"].Component.extend({tagName:"ul",classNames:["sd-tabs-list"],tabs:null,init:function(){this._super(),this.set("tabs",t["default"].A([]))},activeTab:t["default"].computed("tabs.[]",function(){return this.get("tabs.0")}),actions:{registerTab:function(e){this.get("tabs").pushObject(e)},activateTab:function(e){this.set("activeTab",e)}}})}),define("flame-ui/components/span-log",["exports","ember","flame-ui/components/sd-panel"],function(e,t,n){e["default"]=n["default"].extend({classNames:["span-log"],lines:t["default"].computed("log",function(){var e=this.get("log");if(e)return this.get("log").map(function(e){return t["default"].$.extend(e,{color:new t["default"].Handlebars.SafeString("color: "+e.col),lineColor:new t["default"].Handlebars.SafeString("color: "+e.contCol)})})}),actions:{selectMode:function(e){this.sendAction("selectMode",e)}}})}),define("flame-ui/components/transactions-table",["exports","ember","flame-ui/components/sd-panel"],function(e,t,n){e["default"]=n["default"].extend({classNames:["transactions-table"],actions:{select:function(e,t){this.sendAction("select",e,t)}}})}),define("flame-ui/controllers/array",["exports","ember"],function(e,t){e["default"]=t["default"].Controller}),define("flame-ui/controllers/object",["exports","ember"],function(e,t){e["default"]=t["default"].Controller}),define("flame-ui/helpers/fmt-time-interval",["exports"],function(e){e["default"]=function(e,t,n){t=void 0===t?2:t,n=void 0===n?2:n;var r,a=["ns","us","ms","s","min","h","d"],c=Math.abs(e),o=[1e3,1e3,1e3,60,60,24],l=1;for(r=0;r<a.length&&!(c<l*n*o[r]);r++)r<a.length-1&&(l*=o[r]);r=r<a.length?r:a.length-1;var s=(e/l).toFixed(t),i=a[r];return{value:s,unit:i,output:s+" "+i}}}),define("flame-ui/helpers/fmtTimeInterval",["exports"],function(e){e["default"]=function(e,t,n){t=void 0===t?2:t,n=void 0===n?2:n;var r,a=["ns","us","ms","s","min","h","d"],c=Math.abs(e),o=[1e3,1e3,1e3,60,60,24],l=1;for(r=0;r<a.length&&!(c<l*n*o[r]);r++)r<a.length-1&&(l*=o[r]);r=r<a.length?r:a.length-1;var s=(e/l).toFixed(t),i=a[r];return{value:s,unit:i,output:s+" "+i}}}),define("flame-ui/helpers/is-equal",["exports","ember"],function(e,t){e["default"]=t["default"].Helper.extend({compute:function(e,t){return t.a===t.b}})}),define("flame-ui/initializers/app-version",["exports","ember-cli-app-version/initializer-factory","flame-ui/config/environment"],function(e,t,n){var r=n["default"].APP,a=r.name,c=r.version;e["default"]={name:"App Version",initialize:t["default"](a,c)}}),define("flame-ui/initializers/export-application-global",["exports","ember","flame-ui/config/environment"],function(e,t,n){function r(){var e=arguments[1]||arguments[0];if(n["default"].exportApplicationGlobal!==!1){var r,a=n["default"].exportApplicationGlobal;r="string"==typeof a?a:t["default"].String.classify(n["default"].modulePrefix),window[r]||(window[r]=e,e.reopen({willDestroy:function(){this._super.apply(this,arguments),delete window[r]}}))}}e.initialize=r,e["default"]={name:"export-application-global",initialize:r}}),define("flame-ui/lib/flame-graph",["exports"],function(e){function t(e,t,a,d,u,p){function h(e){var t=e.data.value.nconc;return t?e.data.key+" ("+t+")":e.data.key}var m,v,b,f,g,y,x,C=this;this.fg_context=u,this.fg_maxdepth=0,this.fg_maxunique=0,this.fg_depthsamples=[],this.computeDepth(t,0),p.coloring=p.coloring||i,p.hasOwnProperty("growDown")===!1&&(p.growDown=r),m=p.axisLabels?this.fg_axiswidth=n:this.fg_axiswidth=0,this.fg_svgwidth=null!==a?a:parseInt(e.style("width"),10),this.fg_svgheight=null!==d?d:25*this.fg_maxdepth,this.fg_chartwidth=this.fg_svgwidth-m,v=this.fg_chartheight=this.fg_svgheight-m,this.fg_xscale=d3.scale.linear().range([0,this.fg_chartwidth]),this.fg_yscale=d3.scale.linear().range([0,this.fg_chartheight]),this.fg_svg=e.append("svg:svg"),this.fg_svg.attr("width",this.fg_svgwidth),this.fg_svg.attr("height",this.fg_svgheight),b=this.fg_svg.append("svg:rect"),b.attr("class","svBackground"),b.attr("width",this.fg_svgwidth),b.attr("height",this.fg_svgheight),b.attr("fill","#ffffff"),b.on("click",this.detailClose.bind(this)),b.on("dblclick",this.detailClose.bind(this)),this.fg_part=d3.layout.partition(),this.fg_part.children(function(e){return d3.entries(e.value.ch)}),this.fg_part.value(function(e){return e.value.svTotal}),this.fg_part.sort(function(e,t){return e.data.key.localeCompare(t.data.key)}),"random"===p.coloring?(f=d3.scale.category20c(),this.fg_color=function(e){return f(e.data.key)}):this.fg_color=function(e){return e.data.value.svSynthetic?"#ffffff":p.getNodeColor(e.data.value.cont)},g=this.fg_nodeid=function(e){return encodeURIComponent([e.data.key,C.fg_yscale(e.y),C.fg_xscale(e.x)].join("@"))},this.fg_rectwidth=function(e){return C.fg_xscale(e.dx)},this.fg_height=function(e){return C.fg_yscale(e.dy)},this.fg_textwidth=function(e){return Math.max(0,C.fg_rectwidth(e)-l)},this.fg_x=function(e){return C.fg_xscale(e.x)+C.fg_axiswidth},p.growDown?this.fg_y=function(e){return C.fg_yscale(e.y)}:this.fg_y=function(e){return v-C.fg_yscale(e.y)},x=this.fg_part(d3.entries(t)[0]),this.fg_rects=this.fg_svg.selectAll("rect").data(x).enter().append("svg:rect").attr("class",function(e){return e.data.value.svSynthetic?"svBoxSynthetic":"svBox"}).attr("x",this.fg_x).attr("y",this.fg_y).attr("rx",c).attr("ry",c).attr("height",this.fg_height).attr("width",this.fg_rectwidth).attr("fill",this.fg_color).on("click",u.select.bind(this)).on("dblclick",this.detailOpen.bind(this)).on("mouseover",this.mouseover.bind(this)).on("mouseout",this.mouseout.bind(this)),this.fg_clips=this.fg_svg.selectAll("clipPath").data(x).enter().append("svg:clipPath").attr("id",g).append("svg:rect").attr("x",this.fg_x).attr("y",this.fg_y).attr("width",this.fg_textwidth).attr("height",this.fg_height),this.fg_text=this.fg_svg.selectAll("text").data(x).enter().append("text").attr("class","svBoxLabel").attr("x",this.fg_x).attr("y",this.fg_y).attr("dx",o).attr("dy",s).attr("clip-path",function(e){return'url("#'+g(e)+'")'}).on("click",u.select.bind(this)).on("dblclick",this.detailOpen.bind(this)).on("mouseover",this.mouseover.bind(this)).on("mouseout",this.mouseout.bind(this)).text(function(e){return h(e)}),p.axisLabels&&(y=this.fg_svg.append("text"),y.attr("class","svYAxisLabel"),y.attr("x",-this.fg_svgheight),y.attr("dx","8em"),y.attr("y","30px"),y.attr("transform","rotate(-90)"),y.text("Tiers"),y=this.fg_svg.append("text"),y.attr("class","svYAxisLabel"),y.attr("x","30px"),y.attr("dx","8em"),y.attr("y",this.fg_svgheight-30-25),y.attr("width",this.fg_svgwidth-30))}var n=45,r=!1,a=2e3,c=2,o=5,l=10,s="1.0em",i="mono";t.prototype.computeDepth=function(e,t){var n,r;t>this.fg_maxdepth&&(this.fg_maxdepth=t),t>=this.fg_depthsamples.length&&(this.fg_depthsamples[t]=0);for(n in e)e[n].t>this.fg_maxunique&&(this.fg_maxunique=e[n].t),this.fg_depthsamples[t]+=e[n].svTotal,this.computeDepth(e[n].ch,t+1),r=e[n].t,r>0&&void 0===e[n].ch[""]&&(e[n].ch[""]={svSynthetic:!0,t:r,svTotal:r,ch:{}})},t.prototype.detailClose=function(){null!==this.fg_context&&this.fg_context.detailClose()},t.prototype.detailOpen=function(e){e.data.value.svSynthetic||null===this.fg_context||this.fg_context.detailOpen(e)},t.prototype.mouseover=function(e){if(!e.data.value.svSynthetic&&null!==this.fg_context){var t,n,r,a,c,o=this;t=e.data.value.svTotal,r=(100*t/this.fg_depthsamples[0]).toFixed(1),n=e.data.value.t,a=(100*n/this.fg_depthsamples[0]).toFixed(1),c={label:e.data.key,nsamples:e.data.value.svTotal,nunique:e.data.value.t,nallsamples:this.fg_depthsamples[0],pctSamples:r,pctUnique:a,x:d3.event.pageX,y:d3.event.pageY},this.fg_hoverto=setTimeout(function(){o.fg_hoverto=null,o.fg_context.mouseover(e,c)},50)}},t.prototype.mouseout=function(e){this.fg_hoverto&&clearTimeout(this.fg_hoverto),null!==this.fg_context&&this.fg_context.mouseout(e)},t.prototype.zoomSet=function(e){var t=this;this.fg_xscale.domain([e.x,e.x+e.dx]),this.fg_rectwidth=function(e){return t.fg_xscale(e.x+e.dx)-t.fg_xscale(e.x)},this.fg_textwidth=function(e){return Math.max(0,t.fg_xscale(e.x+e.dx)-t.fg_xscale(e.x)-l)},this.fg_rects.transition().duration(a).attr("x",this.fg_x).attr("width",this.fg_rectwidth),this.fg_clips.transition().duration(a).attr("x",this.fg_x).attr("width",this.fg_textwidth),this.fg_text.transition().duration(a).attr("x",this.fg_x)},e["default"]=t}),define("flame-ui/mixins/clickElseWhere",["exports","ember"],function(e,t){e["default"]=t["default"].Mixin.create({autoInitClickElsewhere:!0,onClickElsewhere:t["default"].K,onClickElsewhereBound:null,setupClickElsewhereListener:function(){this.set("onClickElsewhereBound",this.get("onClickElsewhere").bind(this)),t["default"].$(document).on("mouseup",this.get("onClickElsewhereBound"))},removeClickElsewhereListener:function(){t["default"].$(document).off("moseup",this.get("onClickElsewhereBound")),this.isDetroyed||this.isDestroying||this.set("onClickElsewhereBound",null)},setupClickElsewhereListenerOnLoad:t["default"].on("didInsertElement",function(){this.notifyPropertyChange("isClickElsewhereEnabled"),this.get("autoInitClickElsewhere")!==!1&&this.setupClickElsewhereListener()}),removeClickElsewhereListenerOnDestroy:t["default"].on("willDestroyElement",function(){this.get("autoInitClickElsewhere")!==!1&&this.removeClickElsewhereListener()})})}),define("flame-ui/router",["exports","ember","flame-ui/config/environment"],function(e,t,n){var r=t["default"].Router.extend({location:n["default"].locationType});r.map(function(){}),e["default"]=r}),define("flame-ui/routes/application",["exports","ember"],function(e,t){e["default"]=t["default"].Route.extend({transactionStore:t["default"].inject.service(),model:function(){return this.get("transactionStore").findAll()}})}),define("flame-ui/services/color-store",["exports","ember"],function(e,t){e["default"]=t["default"].Service.extend({init:function(){this._super.apply(this,arguments),this.setProperties({colors:d3.scale.category10(),lastColorIndex:0,containerNames:{},containerNameList:[]})},assignColor:function(e){var t=this.get("containerNames"),n=t[e];return void 0===n&&(n=this.get("colors")(this.get("lastColorIndex")),t[e]=n,this.get("containerNameList").pushObject(e),this.incrementProperty("lastColorIndex")),n}})}),define("flame-ui/services/transaction-store",["exports","ember","flame-ui/helpers/fmtTimeInterval"],function(e,t,n){function r(e,t){var n={};return n[""]={},n[""].ch={},n[""].ch[t]=e[""].ch[t],n}function a(e){var t,n;for(t in e)a(e[t].ch),n=e[t].t,n>0&&(e[t].ch[""]={svSynthetic:!0,t:n,svTotal:n,ch:{}});return e}e["default"]=t["default"].Service.extend({colorStore:t["default"].inject.service("color-store"),findAll:function(){return new t["default"].RSVP.Promise(function(e){t["default"].run.next(function(){var t={avg:a(c),min:a(o),max:a(l)},r=Object.keys(t.avg[""].ch),s=r.map(function(e){return{node:e,n:t.avg[""].ch[e].n,avg:n["default"](t.avg[""].ch[e].tt,3,1).output,min:n["default"](t.min[""].ch[e].tt,3,1).output,max:n["default"](t.max[""].ch[e].tt,3,1).output}});e(s)})})},findTransaction:function(e,n){return new t["default"].RSVP.Promise(function(s){t["default"].run.next(function(){var t;switch(n){case"avg":t=a(c);break;case"min":t=a(o);break;case"max":t=a(l)}s(r(t,e))})})},findSpanLog:function(e,n){var r=this.get("colorStore");return new t["default"].RSVP.Promise(function(a){t["default"].run.next(function(){function t(e,n,r,a){if(void 0!==r.logs){for(var c=0;c<r.logs.length;c++)r.logs[c].k=n,r.logs[c].d=r;Array.prototype.push.apply(e,r.logs)}if(a!==!0){var o=r.ch;for(var l in o)t(e,l,o[l])}}var c=[];"SPAN"===n?t(c,e.data.key,e.data.value,!0):(t(c,e.data.key,e.data.value),c.sort(function(e,t){return e.th===t.th?e.tl-t.tl:e.th-t.th}));for(var o=[],l=0;l<c.length;l++){var s,i=c[l].b.toLowerCase();s=i.indexOf("err")>-1?"#ff0000":i.indexOf("warn")>-1?"#ff8800":"#000000";var d=c[l].d.cont,u=r.assignColor(d);o[l]={contCol:u,containerName:d,col:s,k:c[l].k,t:c[l].t,b:c[l].b}}a(o)})})}});var c={"":{t:0,ch:{srvc_node1:{t:2122973.5,ch:{req1:{t:2952290.2,exe:"python /src/us.py",cont:"srvc_node1",ch:{srvc_node5:{t:262875.5,exe:"python /src/us.py",cont:"srvc_node5",ch:{req0:{t:4327011.1,exe:"python /src/us.py",cont:"srvc_node5",tt:19363922.7,c:1,ch:{srvc_node4:{t:619519.1,exe:"python /src/us.py",cont:"srvc_node4",ch:{processing:{t:34770.9,exe:"python /src/us.py",cont:"srvc_node4",tt:5962094.8,c:1,ch:{prepare:{t:1752537.6,exe:"python /src/us.py",cont:"srvc_node4",tt:1752537.6,c:1,ch:[]},run:{t:3106559.5,exe:"python /src/us.py",cont:"srvc_node4",tt:3106559.5,c:1,ch:[]},reduce:{t:1068226.8,exe:"python /src/us.py",cont:"srvc_node4",tt:1068226.8,c:1,ch:[]}}},data_write:{t:8455297.7,exe:"python /src/us.py",cont:"srvc_node4",tt:8455297.7,c:1,ch:[]}},tt:15036911.6,c:1,logs:[{t:"16:09:36.198634906",tid:33494,tl:198634906,b:"received connection.",th:1443395376},{t:"16:09:36.347598152",tid:33494,tl:347598152,b:"received connection.",th:1443395376},{t:"16:09:36.497346821",tid:33494,tl:497346821,b:"received connection.",th:1443395376},{t:"16:09:36.660336892",tid:33494,tl:660336892,b:"received connection.",th:1443395376},{t:"16:09:36.819350497",tid:33494,tl:819350497,b:"received connection.",th:1443395376},{t:"16:09:37.036836790",tid:33494,tl:36836790,b:"received connection.",th:1443395377},{t:"16:09:37.269267282",tid:33494,tl:269267282,b:"received connection.",th:1443395377},{t:"16:09:37.445992161",tid:33494,tl:445992161,b:"received connection.",th:1443395377},{t:"16:09:37.657455025",tid:33494,tl:657455025,b:"received connection.",th:1443395377},{t:"16:09:37.840751317",tid:33494,tl:840751317,b:"received connection.",th:1443395377}]}}},req1:{t:1200271.6,exe:"python /src/us.py",cont:"srvc_node5",tt:7116825.4,c:1,ch:{srvc_node3:{t:408021.3,exe:"python /src/us.py",cont:"srvc_node3",ch:{data_write:{t:5508532.5,exe:"python /src/us.py",cont:"srvc_node3",tt:5508532.5,c:1,ch:[]}},tt:5916553.8,c:1,logs:[{t:"16:09:36.203118647",tid:33545,tl:203118647,b:"received connection.",th:1443395376},{t:"16:09:36.366374325",tid:33545,tl:366374325,b:"received connection.",th:1443395376},{t:"16:09:36.505069166",tid:33545,tl:505069166,b:"received connection.",th:1443395376},{t:"16:09:36.665470173",tid:33545,tl:665470173,b:"received connection.",th:1443395376},{t:"16:09:36.836635616",tid:33545,tl:836635616,b:"received connection.",th:1443395376},{t:"16:09:37.066982448",tid:33545,tl:66982448,b:"received connection.",th:1443395377},{t:"16:09:37.302146553",tid:33545,tl:302146553,b:"received connection.",th:1443395377},{t:"16:09:37.459366601",tid:33545,tl:459366601,b:"received connection.",th:1443395377},{t:"16:09:37.676147724",tid:33545,tl:676147724,b:"received connection.",th:1443395377},{t:"16:09:37.854587821",tid:33545,tl:854587821,b:"received connection.",th:1443395377}]}}}},tt:26743623.6,c:1,logs:[{t:"16:09:36.197538538",tid:33644,tl:197538538,b:"received connection.",th:1443395376},{t:"16:09:36.347247998",tid:33644,tl:347247998,b:"sent:1:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35918).sent:1:srvc_node1",th:1443395376},{t:"16:09:36.496785481",tid:33644,tl:496785481,b:"sent:2:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35925).sent:2:srvc_node1",th:1443395376},{t:"16:09:36.659903249",tid:33644,tl:659903249,b:"sent:3:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35932).sent:3:srvc_node1",th:1443395376},{t:"16:09:36.818701424",tid:33644,tl:818701424,b:"sent:4:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35939).sent:4:srvc_node1",th:1443395376},{t:"16:09:37.035193574",tid:33644,tl:35193574,b:"sent:5:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35946).sent:5:srvc_node1",th:1443395377},{t:"16:09:37.268774698",tid:33644,tl:268774698,b:"sent:6:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35953).sent:6:srvc_node1",th:1443395377},{t:"16:09:37.444914669",tid:33644,tl:444914669,b:"sent:7:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35960).sent:7:srvc_node1",th:1443395377},{t:"16:09:37.646509752",tid:33644,tl:646509752,b:"sent:8:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35972).sent:8:srvc_node1",th:1443395377},{t:"16:09:37.816482059",tid:33644,tl:816482059,b:"sent:9:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35986).sent:9:srvc_node1",th:1443395377}]}},tt:29695913.8,c:1,logs:[{t:"16:09:36.197230388",tid:33693,tl:197230388,b:"Sending request to srvc_next1",th:1443395376},{t:"16:09:36.197241147",tid:33693,tl:197241147,b:"warn: ciao",th:1443395376},{t:"16:09:36.347111458",tid:33693,tl:347111458,b:"Sending request to srvc_next1",th:1443395376},{t:"16:09:36.347121550",tid:33693,tl:347121550,b:"warn: ciao",th:1443395376},{t:"16:09:36.496587176",tid:33693,tl:496587176,b:"Sending request to srvc_next1",th:1443395376},{t:"16:09:36.496606529",tid:33693,tl:496606529,b:"warn: ciao",th:1443395376},{t:"16:09:36.659778409",tid:33693,tl:659778409,b:"Sending request to srvc_next1",th:1443395376},{t:"16:09:36.659786376",tid:33693,tl:659786376,b:"warn: ciao",th:1443395376},{t:"16:09:36.794733906",tid:33693,tl:794733906,b:"Sending request to srvc_next1",th:1443395376},{t:"16:09:36.794737238",tid:33693,tl:794737238,b:"warn: ciao",th:1443395376},{t:"16:09:37.034700222",tid:33693,tl:34700222,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.034791254",tid:33693,tl:34791254,b:"warn: ciao",th:1443395377},{t:"16:09:37.268486283",tid:33693,tl:268486283,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.268590219",tid:33693,tl:268590219,b:"warn: ciao",th:1443395377},{t:"16:09:37.444434480",tid:33693,tl:444434480,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.444461064",tid:33693,tl:444461064,b:"warn: ciao",th:1443395377},{t:"16:09:37.646020900",tid:33693,tl:646020900,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.646096951",tid:33693,tl:646096951,b:"warn: ciao",th:1443395377},{t:"16:09:37.816213370",tid:33693,tl:816213370,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.816231235",tid:33693,tl:816231235,b:"warn: ciao",th:1443395377}]},req0:{t:642864.3,exe:"python /src/us.py",cont:"srvc_node1",ch:{srvc_node2:{t:335033.9,exe:"python /src/us.py",cont:"srvc_node2",ch:{req1:{t:2510422.3,exe:"python /src/us.py",cont:"srvc_node2",tt:17014528.7,c:1,ch:{srvc_node3:{t:398619.7,exe:"python /src/us.py",cont:"srvc_node3",ch:{data_write:{t:14105486.7,exe:"python /src/us.py",cont:"srvc_node3",tt:14105486.7,c:1,ch:[]}},tt:14504106.4,c:1,logs:[{t:"16:09:36.191247804",tid:33545,tl:191247804,b:"received connection.",th:1443395376},{t:"16:09:36.341308947",tid:33545,tl:341308947,b:"received connection.",th:1443395376},{t:"16:09:36.490919351",tid:33545,tl:490919351,b:"received connection.",th:1443395376},{t:"16:09:36.623110216",tid:33545,tl:623110216,b:"received connection.",th:1443395376},{t:"16:09:36.785453489",tid:33545,tl:785453489,b:"received connection.",th:1443395376},{t:"16:09:36.980059330",tid:33545,tl:980059330,b:"received connection.",th:1443395376},{t:"16:09:37.220252027",tid:33545,tl:220252027,b:"received connection.",th:1443395377},{t:"16:09:37.431854694",tid:33545,tl:431854694,b:"received connection.",th:1443395377},{t:"16:09:37.587319877",tid:33545,tl:587319877,b:"received connection.",th:1443395377},{t:"16:09:37.802801763",tid:33545,tl:802801763,b:"received connection.",th:1443395377}]}}},req0:{t:1378143,exe:"python /src/us.py",cont:"srvc_node2",tt:11680880.7,c:1,ch:{srvc_node4:{t:465507.5,exe:"python /src/us.py",cont:"srvc_node4",ch:{processing:{t:43206.8,exe:"python /src/us.py",cont:"srvc_node4",tt:5866024.3,c:1,ch:{prepare:{t:1598572.3,exe:"python /src/us.py",cont:"srvc_node4",tt:1598572.3,c:1,ch:[]},run:{t:2931361.7,exe:"python /src/us.py",cont:"srvc_node4",tt:2931361.7,c:1,ch:[]},reduce:{t:1292883.5,exe:"python /src/us.py",cont:"srvc_node4",tt:1292883.5,c:1,ch:[]}}},data_write:{t:3971205.9,exe:"python /src/us.py",cont:"srvc_node4",tt:3971205.9,c:1,ch:[]}},tt:10302737.7,c:1,logs:[{t:"16:09:36.184230289",tid:33494,tl:184230289,b:"received connection.",th:1443395376},{t:"16:09:36.333927269",tid:33494,tl:333927269,b:"received connection.",th:1443395376},{t:"16:09:36.479724527",tid:33494,tl:479724527,b:"received connection.",th:1443395376},{t:"16:09:36.612055778",tid:33494,tl:612055778,b:"received connection.",th:1443395376},{t:"16:09:36.777067140",tid:33494,tl:777067140,b:"received connection.",th:1443395376},{t:"16:09:36.956927519",tid:33494,tl:956927519,b:"received connection.",th:1443395376},{t:"16:09:37.190552515",tid:33494,tl:190552515,b:"received connection.",th:1443395377},{t:"16:09:37.419163804",tid:33494,tl:419163804,b:"received connection.",th:1443395377},{t:"16:09:37.576345021",tid:33494,tl:576345021,b:"received connection.",th:1443395377},{t:"16:09:37.792870999",tid:33494,tl:792870999,b:"received connection.",th:1443395377}]}}},req2:{t:4815389,exe:"python /src/us.py",cont:"srvc_node2",tt:8991972,c:1,ch:{srvc_node6:{t:388698,exe:"python /src/us.py",cont:"srvc_node6",ch:{processing:{t:32661.2,exe:"python /src/us.py",cont:"srvc_node6",tt:3787885,c:1,ch:{prepare:{t:976122.2,exe:"python /src/us.py",cont:"srvc_node6",tt:976122.2,c:1,ch:[]},run:{t:2148489.8,exe:"python /src/us.py",cont:"srvc_node6",tt:2148489.8,c:1,ch:[]},reduce:{t:630611.8,exe:"python /src/us.py",cont:"srvc_node6",tt:630611.8,c:1,ch:[]}}}},tt:4176583,c:1,logs:[{t:"16:09:36.192630512",tid:33443,tl:192630512,b:"received connection.",th:1443395376},{t:"16:09:36.343666770",tid:33443,tl:343666770,b:"received connection.",th:1443395376},{t:"16:09:36.493098365",tid:33443,tl:493098365,b:"received connection.",th:1443395376},{t:"16:09:36.657005650",tid:33443,tl:657005650,b:"received connection.",th:1443395376},{t:"16:09:36.789757449",tid:33443,tl:789757449,b:"received connection.",th:1443395376},{t:"16:09:37.028128833",tid:33443,tl:28128833,b:"received connection.",th:1443395377},{t:"16:09:37.260692426",tid:33443,tl:260692426,b:"received connection.",th:1443395377},{t:"16:09:37.436735077",tid:33443,tl:436735077,b:"received connection.",th:1443395377},{t:"16:09:37.639222190",tid:33443,tl:639222190,b:"received connection.",th:1443395377},{t:"16:09:37.807313733",tid:33443,tl:807313733,b:"received connection.",th:1443395377}]}}}},tt:38022415.3,c:1,logs:[{t:"16:09:36.182532198",tid:33593,tl:182532198,b:"received connection.",th:1443395376},{t:"16:09:36.333481152",tid:33593,tl:333481152,b:"sent:1:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56239).sent:1:srvc_node1",
-th:1443395376},{t:"16:09:36.478841623",tid:33593,tl:478841623,b:"sent:2:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56246).sent:2:srvc_node1",th:1443395376},{t:"16:09:36.611529745",tid:33593,tl:611529745,b:"sent:3:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56253).sent:3:srvc_node1",th:1443395376},{t:"16:09:36.776541724",tid:33593,tl:776541724,b:"sent:4:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56260).sent:4:srvc_node1",th:1443395376},{t:"16:09:36.955938497",tid:33593,tl:955938497,b:"sent:5:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56267).sent:5:srvc_node1",th:1443395376},{t:"16:09:37.189866785",tid:33593,tl:189866785,b:"sent:6:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56274).sent:6:srvc_node1",th:1443395377},{t:"16:09:37.417922034",tid:33593,tl:417922034,b:"sent:1:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56288).sent:1:srvc_node7",th:1443395377},{t:"16:09:37.575315654",tid:33593,tl:575315654,b:"sent:2:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56300).sent:2:srvc_node7",th:1443395377},{t:"16:09:37.791996348",tid:33593,tl:791996348,b:"sent:3:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56310).sent:3:srvc_node7",th:1443395377}]}},tt:38665279.6,c:1,logs:[{t:"16:09:36.182136414",tid:33693,tl:182136414,b:"Sending request to srvc_next0",th:1443395376},{t:"16:09:36.182150700",tid:33693,tl:182150700,b:"warn: ciao",th:1443395376},{t:"16:09:36.333366388",tid:33693,tl:333366388,b:"Sending request to srvc_next0",th:1443395376},{t:"16:09:36.333377175",tid:33693,tl:333377175,b:"warn: ciao",th:1443395376},{t:"16:09:36.478414240",tid:33693,tl:478414240,b:"Sending request to srvc_next0",th:1443395376},{t:"16:09:36.478439466",tid:33693,tl:478439466,b:"warn: ciao",th:1443395376},{t:"16:09:36.611292495",tid:33693,tl:611292495,b:"Sending request to srvc_next0",th:1443395376},{t:"16:09:36.611304467",tid:33693,tl:611304467,b:"warn: ciao",th:1443395376},{t:"16:09:36.776173468",tid:33693,tl:776173468,b:"Sending request to srvc_next0",th:1443395376},{t:"16:09:36.776188378",tid:33693,tl:776188378,b:"warn: ciao",th:1443395376},{t:"16:09:36.955589515",tid:33693,tl:955589515,b:"Sending request to srvc_next0",th:1443395376},{t:"16:09:36.955595066",tid:33693,tl:955595066,b:"warn: ciao",th:1443395376},{t:"16:09:37.189427709",tid:33693,tl:189427709,b:"Sending request to srvc_next0",th:1443395377},{t:"16:09:37.189506140",tid:33693,tl:189506140,b:"warn: ciao",th:1443395377},{t:"16:09:37.417546626",tid:33693,tl:417546626,b:"Sending request to srvc_next0",th:1443395377},{t:"16:09:37.417574095",tid:33693,tl:417574095,b:"warn: ciao",th:1443395377},{t:"16:09:37.574315805",tid:33693,tl:574315805,b:"Sending request to srvc_next0",th:1443395377},{t:"16:09:37.574341783",tid:33693,tl:574341783,b:"warn: ciao",th:1443395377},{t:"16:09:37.791550538",tid:33693,tl:791550538,b:"Sending request to srvc_next0",th:1443395377},{t:"16:09:37.791556554",tid:33693,tl:791556554,b:"warn: ciao",th:1443395377}]},processing:{t:37247.1,exe:"python /src/us.py",cont:"srvc_node1",tt:7682674.3,c:1,ch:{prepare:{t:2117815.9,exe:"python /src/us.py",cont:"srvc_node1",tt:2117815.9,c:1,ch:[]},run:{t:4125321.1,exe:"python /src/us.py",cont:"srvc_node1",tt:4125321.1,c:1,ch:[]},reduce:{t:1402290.2,exe:"python /src/us.py",cont:"srvc_node1",tt:1402290.2,c:1,ch:[]}}}},n:10,c:1,exe:"python /src/us.py",id:1,cont:"srvc_node1",tt:78166841.2,logs:[{t:"16:09:36.180025615",tid:33693,tl:180025615,b:"Child transaction start.",th:1443395376},{t:"16:09:36.196310214",tid:33693,tl:196310214,b:"Child transaction start.",th:1443395376},{t:"16:09:36.332768241",tid:33693,tl:332768241,b:"Child transaction start.",th:1443395376},{t:"16:09:36.346772865",tid:33693,tl:346772865,b:"Child transaction start.",th:1443395376},{t:"16:09:36.477838363",tid:33693,tl:477838363,b:"Child transaction start.",th:1443395376},{t:"16:09:36.496014857",tid:33693,tl:496014857,b:"Child transaction start.",th:1443395376},{t:"16:09:36.610769471",tid:33693,tl:610769471,b:"Child transaction start.",th:1443395376},{t:"16:09:36.659472137",tid:33693,tl:659472137,b:"Child transaction start.",th:1443395376},{t:"16:09:36.775492821",tid:33693,tl:775492821,b:"Child transaction start.",th:1443395376},{t:"16:09:36.794340504",tid:33693,tl:794340504,b:"Child transaction start.",th:1443395376},{t:"16:09:36.954545280",tid:33693,tl:954545280,b:"Child transaction start.",th:1443395376},{t:"16:09:37.033684232",tid:33693,tl:33684232,b:"Child transaction start.",th:1443395377},{t:"16:09:37.188261447",tid:33693,tl:188261447,b:"Child transaction start.",th:1443395377},{t:"16:09:37.267784868",tid:33693,tl:267784868,b:"Child transaction start.",th:1443395377},{t:"16:09:37.416311521",tid:33693,tl:416311521,b:"Child transaction start.",th:1443395377},{t:"16:09:37.443710837",tid:33693,tl:443710837,b:"Child transaction start.",th:1443395377},{t:"16:09:37.572689242",tid:33693,tl:572689242,b:"Child transaction start.",th:1443395377},{t:"16:09:37.645050408",tid:33693,tl:645050408,b:"Child transaction start.",th:1443395377},{t:"16:09:37.790544391",tid:33693,tl:790544391,b:"Child transaction start.",th:1443395377},{t:"16:09:37.815549477",tid:33693,tl:815549477,b:"Child transaction start.",th:1443395377}]},srvc_node7:{t:4401361.8,ch:{req1:{t:808532.3,exe:"python /src/us.py",cont:"srvc_node7",ch:{srvc_node6:{t:474192.7,exe:"python /src/us.py",cont:"srvc_node6",ch:{processing:{t:55844.5,exe:"python /src/us.py",cont:"srvc_node6",tt:4907627.3,c:1,ch:{prepare:{t:1303922.2,exe:"python /src/us.py",cont:"srvc_node6",tt:1303922.2,c:1,ch:[]},run:{t:2646393.4,exe:"python /src/us.py",cont:"srvc_node6",tt:2646393.4,c:1,ch:[]},reduce:{t:901467.2,exe:"python /src/us.py",cont:"srvc_node6",tt:901467.2,c:1,ch:[]}}}},tt:5381820,c:1,logs:[{t:"16:09:37.352087200",tid:33443,tl:352087200,b:"received connection.",th:1443395377},{t:"16:09:37.489080341",tid:33443,tl:489080341,b:"received connection.",th:1443395377},{t:"16:09:37.675723854",tid:33443,tl:675723854,b:"received connection.",th:1443395377},{t:"16:09:37.883005681",tid:33443,tl:883005681,b:"received connection.",th:1443395377},{t:"16:09:38.474406801",tid:33443,tl:474406801,b:"received connection.",th:1443395378},{t:"16:09:38.612147061",tid:33443,tl:612147061,b:"received connection.",th:1443395378},{t:"16:09:38.763997911",tid:33443,tl:763997911,b:"received connection.",th:1443395378},{t:"16:09:38.919386852",tid:33443,tl:919386852,b:"received connection.",th:1443395378},{t:"16:09:39.074968098",tid:33443,tl:74968098,b:"received connection.",th:1443395379},{t:"16:09:39.229572002",tid:33443,tl:229572002,b:"received connection.",th:1443395379}]}},tt:6190352.3,c:1,logs:[{t:"16:09:37.351311051",tid:33742,tl:351311051,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.351324274",tid:33742,tl:351324274,b:"warn: ciao",th:1443395377},{t:"16:09:37.488789594",tid:33742,tl:488789594,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.488804378",tid:33742,tl:488804378,b:"warn: ciao",th:1443395377},{t:"16:09:37.675051914",tid:33742,tl:675051914,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.675131827",tid:33742,tl:675131827,b:"warn: ciao",th:1443395377},{t:"16:09:37.882282932",tid:33742,tl:882282932,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.882298098",tid:33742,tl:882298098,b:"warn: ciao",th:1443395377},{t:"16:09:38.474329096",tid:33742,tl:474329096,b:"Sending request to srvc_next1",th:1443395378},{t:"16:09:38.474333813",tid:33742,tl:474333813,b:"warn: ciao",th:1443395378},{t:"16:09:38.611750754",tid:33742,tl:611750754,b:"Sending request to srvc_next1",th:1443395378},{t:"16:09:38.611865203",tid:33742,tl:611865203,b:"warn: ciao",th:1443395378},{t:"16:09:38.763485537",tid:33742,tl:763485537,b:"Sending request to srvc_next1",th:1443395378},{t:"16:09:38.763651028",tid:33742,tl:763651028,b:"warn: ciao",th:1443395378},{t:"16:09:38.918909308",tid:33742,tl:918909308,b:"Sending request to srvc_next1",th:1443395378},{t:"16:09:38.918921260",tid:33742,tl:918921260,b:"warn: ciao",th:1443395378},{t:"16:09:39.074655496",tid:33742,tl:74655496,b:"Sending request to srvc_next1",th:1443395379},{t:"16:09:39.074679193",tid:33742,tl:74679193,b:"warn: ciao",th:1443395379},{t:"16:09:39.229120641",tid:33742,tl:229120641,b:"Sending request to srvc_next1",th:1443395379},{t:"16:09:39.229136342",tid:33742,tl:229136342,b:"warn: ciao",th:1443395379}]},req0:{t:6101315.7,exe:"python /src/us.py",cont:"srvc_node7",ch:{srvc_node2:{t:498744.8,exe:"python /src/us.py",cont:"srvc_node2",ch:{req1:{t:1320078,exe:"python /src/us.py",cont:"srvc_node2",tt:4082256.3,c:1,ch:{srvc_node3:{t:386368.3,exe:"python /src/us.py",cont:"srvc_node3",ch:{data_write:{t:2375810,exe:"python /src/us.py",cont:"srvc_node3",tt:2375810,c:1,ch:[]}},tt:2762178.3,c:1,logs:[{t:"16:09:37.345391993",tid:33545,tl:345391993,b:"received connection.",th:1443395377},{t:"16:09:37.481864408",tid:33545,tl:481864408,b:"received connection.",th:1443395377},{t:"16:09:37.659623229",tid:33545,tl:659623229,b:"received connection.",th:1443395377},{t:"16:09:37.841617446",tid:33545,tl:841617446,b:"received connection.",th:1443395377},{t:"16:09:38.470036469",tid:33545,tl:470036469,b:"received connection.",th:1443395378},{t:"16:09:38.600230037",tid:33545,tl:600230037,b:"received connection.",th:1443395378},{t:"16:09:38.751960871",tid:33545,tl:751960871,b:"received connection.",th:1443395378},{t:"16:09:38.906947141",tid:33545,tl:906947141,b:"received connection.",th:1443395378},{t:"16:09:39.063473189",tid:33545,tl:63473189,b:"received connection.",th:1443395379},{t:"16:09:39.218984638",tid:33545,tl:218984638,b:"received connection.",th:1443395379}]}}},req0:{t:1517993.2,exe:"python /src/us.py",cont:"srvc_node2",tt:54566540.1,c:1,ch:{srvc_node4:{t:453557.8,exe:"python /src/us.py",cont:"srvc_node4",ch:{processing:{t:44234.6,exe:"python /src/us.py",cont:"srvc_node4",tt:7165221,c:1,ch:{prepare:{t:1830289.1,exe:"python /src/us.py",cont:"srvc_node4",tt:1830289.1,c:1,ch:[]},run:{t:3852113,exe:"python /src/us.py",cont:"srvc_node4",tt:3852113,c:1,ch:[]},reduce:{t:1438584.3,exe:"python /src/us.py",cont:"srvc_node4",tt:1438584.3,c:1,ch:[]}}},data_write:{t:45429768.1,exe:"python /src/us.py",cont:"srvc_node4",tt:45429768.1,c:1,ch:[]}},tt:53048546.9,c:1,logs:[{t:"16:09:37.336397098",tid:33494,tl:336397098,b:"received connection.",th:1443395377},{t:"16:09:37.475146458",tid:33494,tl:475146458,b:"received connection.",th:1443395377},{t:"16:09:37.646232429",tid:33494,tl:646232429,b:"received connection.",th:1443395377},{t:"16:09:37.817131403",tid:33494,tl:817131403,b:"received connection.",th:1443395377},{t:"16:09:38.037652775",tid:33494,tl:37652775,b:"received connection.",th:1443395378},{t:"16:09:38.587243353",tid:33494,tl:587243353,b:"received connection.",th:1443395378},{t:"16:09:38.741435726",tid:33494,tl:741435726,b:"received connection.",th:1443395378},{t:"16:09:38.895694083",tid:33494,tl:895694083,b:"received connection.",th:1443395378},{t:"16:09:39.052903248",tid:33494,tl:52903248,b:"received connection.",th:1443395379},{t:"16:09:39.204873513",tid:33494,tl:204873513,b:"received connection.",th:1443395379}]}}},req2:{t:1047624.5,exe:"python /src/us.py",cont:"srvc_node2",tt:6238074.6,c:1,ch:{srvc_node6:{t:337474.8,exe:"python /src/us.py",cont:"srvc_node6",ch:{processing:{t:46587.1,exe:"python /src/us.py",cont:"srvc_node6",tt:4852975.3,c:1,ch:{prepare:{t:1275400.8,exe:"python /src/us.py",cont:"srvc_node6",tt:1275400.8,c:1,ch:[]},run:{t:2646293.4,exe:"python /src/us.py",cont:"srvc_node6",tt:2646293.4,c:1,ch:[]},reduce:{t:884694,exe:"python /src/us.py",cont:"srvc_node6",tt:884694,c:1,ch:[]}}}},tt:5190450.1,c:1,logs:[{t:"16:09:37.347497659",tid:33443,tl:347497659,b:"received connection.",th:1443395377},{t:"16:09:37.484091539",tid:33443,tl:484091539,b:"received connection.",th:1443395377},{t:"16:09:37.664166914",tid:33443,tl:664166914,b:"received connection.",th:1443395377},{t:"16:09:37.850939629",tid:33443,tl:850939629,b:"received connection.",th:1443395377},{t:"16:09:38.471589980",tid:33443,tl:471589980,b:"received connection.",th:1443395378},{t:"16:09:38.603823010",tid:33443,tl:603823010,b:"received connection.",th:1443395378},{t:"16:09:38.755598477",tid:33443,tl:755598477,b:"received connection.",th:1443395378},{t:"16:09:38.911247902",tid:33443,tl:911247902,b:"received connection.",th:1443395378},{t:"16:09:39.067074627",tid:33443,tl:67074627,b:"received connection.",th:1443395379},{t:"16:09:39.222089376",tid:33443,tl:222089376,b:"received connection.",th:1443395379}]}}}},tt:65385615.8,c:1,logs:[{t:"16:09:37.335700325",tid:33593,tl:335700325,b:"sent:7:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56281).sent:7:srvc_node1",th:1443395377},{t:"16:09:37.474421133",tid:33593,tl:474421133,b:"sent:8:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56293).sent:8:srvc_node1",th:1443395377},{t:"16:09:37.644819610",tid:33593,tl:644819610,b:"sent:9:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56305).sent:9:srvc_node1",th:1443395377},{t:"16:09:37.815148095",tid:33593,tl:815148095,b:"sent:10:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56317).sent:10:srvc_nod",th:1443395377},{t:"16:09:38.036076408",tid:33593,tl:36076408,b:"sent:4:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56322).sent:4:srvc_node7",th:1443395378},{t:"16:09:38.586462321",tid:33593,tl:586462321,b:"sent:5:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56329).sent:5:srvc_node7",th:1443395378},{t:"16:09:38.739829720",tid:33593,tl:739829720,b:"sent:6:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56334).sent:6:srvc_node7",th:1443395378},{t:"16:09:38.894704234",tid:33593,tl:894704234,b:"sent:7:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56339).sent:7:srvc_node7",th:1443395378},{t:"16:09:39.051752706",tid:33593,tl:51752706,b:"sent:8:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56344).sent:8:srvc_node7",th:1443395379},{t:"16:09:39.203920580",tid:33593,tl:203920580,b:"sent:9:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56349).sent:9:srvc_node7",th:1443395379}]}},tt:71486931.5,c:1,logs:[{t:"16:09:37.335369029",tid:33742,tl:335369029,b:"Sending request to srvc_next0",th:1443395377},{t:"16:09:37.335408192",tid:33742,tl:335408192,b:"warn: ciao",th:1443395377},{t:"16:09:37.473982441",tid:33742,tl:473982441,b:"Sending request to srvc_next0",th:1443395377},{t:"16:09:37.474086669",tid:33742,tl:474086669,b:"warn: ciao",th:1443395377},{t:"16:09:37.606390365",tid:33742,tl:606390365,b:"Sending request to srvc_next0",th:1443395377},{t:"16:09:37.606440230",tid:33742,tl:606440230,b:"warn: ciao",th:1443395377},{t:"16:09:37.799737552",tid:33742,tl:799737552,b:"Sending request to srvc_next0",th:1443395377},{t:"16:09:37.799761954",tid:33742,tl:799761954,b:"warn: ciao",th:1443395377},{t:"16:09:38.034872668",tid:33742,tl:34872668,b:"Sending request to srvc_next0",th:1443395378},{t:"16:09:38.034933977",tid:33742,tl:34933977,b:"warn: ciao",th:1443395378},{t:"16:09:38.586323105",tid:33742,tl:586323105,b:"Sending request to srvc_next0",th:1443395378},{t:"16:09:38.586328670",tid:33742,tl:586328670,b:"warn: ciao",th:1443395378},{t:"16:09:38.739189035",tid:33742,tl:739189035,b:"Sending request to srvc_next0",th:1443395378},{t:"16:09:38.739194543",tid:33742,tl:739194543,b:"warn: ciao",th:1443395378},{t:"16:09:38.894289866",tid:33742,tl:894289866,b:"Sending request to srvc_next0",th:1443395378},{t:"16:09:38.894295300",tid:33742,tl:894295300,b:"warn: ciao",th:1443395378},{t:"16:09:39.051044578",tid:33742,tl:51044578,b:"Sending request to srvc_next0",th:1443395379},{t:"16:09:39.051252062",tid:33742,tl:51252062,b:"warn: ciao",th:1443395379},{t:"16:09:39.203005355",tid:33742,tl:203005355,b:"Sending request to srvc_next0",th:1443395379},{t:"16:09:39.203027486",tid:33742,tl:203027486,b:"warn: ciao",th:1443395379}]},processing:{t:46903.3,exe:"python /src/us.py",cont:"srvc_node7",tt:16905339.8,c:1,ch:{prepare:{t:4904449.7,exe:"python /src/us.py",cont:"srvc_node7",tt:4904449.7,c:1,ch:[]},run:{t:9001197.8,exe:"python /src/us.py",cont:"srvc_node7",tt:9001197.8,c:1,ch:[]},reduce:{t:2952789,exe:"python /src/us.py",cont:"srvc_node7",tt:2952789,c:1,ch:[]}}}},n:10,c:1,exe:"python /src/us.py",id:1,cont:"srvc_node7",tt:98983985.4,logs:[{t:"16:09:37.333802459",tid:33742,tl:333802459,b:"Child transaction start.",th:1443395377},{t:"16:09:37.350260278",tid:33742,tl:350260278,b:"Child transaction start.",th:1443395377},{t:"16:09:37.473073552",tid:33742,tl:473073552,b:"Child transaction start.",th:1443395377},{t:"16:09:37.488245552",tid:33742,tl:488245552,b:"Child transaction start.",th:1443395377},{t:"16:09:37.605628564",tid:33742,tl:605628564,b:"Child transaction start.",th:1443395377},{t:"16:09:37.674192252",tid:33742,tl:674192252,b:"Child transaction start.",th:1443395377},{t:"16:09:37.798725093",tid:33742,tl:798725093,b:"Child transaction start.",th:1443395377},{t:"16:09:37.860565977",tid:33742,tl:860565977,b:"Child transaction start.",th:1443395377},{t:"16:09:38.033738598",tid:33742,tl:33738598,b:"Child transaction start.",th:1443395378},{t:"16:09:38.473860709",tid:33742,tl:473860709,b:"Child transaction start.",th:1443395378},{t:"16:09:38.585140603",tid:33742,tl:585140603,b:"Child transaction start.",th:1443395378},{t:"16:09:38.611185361",tid:33742,tl:611185361,b:"Child transaction start.",th:1443395378},{t:"16:09:38.738362747",tid:33742,tl:738362747,b:"Child transaction start.",th:1443395378},{t:"16:09:38.762684365",tid:33742,tl:762684365,b:"Child transaction start.",th:1443395378},{t:"16:09:38.893531145",tid:33742,tl:893531145,b:"Child transaction start.",th:1443395378},{t:"16:09:38.917660233",tid:33742,tl:917660233,b:"Child transaction start.",th:1443395378},{t:"16:09:39.049755219",tid:33742,tl:49755219,b:"Child transaction start.",th:1443395379},{t:"16:09:39.073874573",tid:33742,tl:73874573,b:"Child transaction start.",th:1443395379},{t:"16:09:39.201977320",tid:33742,tl:201977320,b:"Child transaction start.",th:1443395379},{t:"16:09:39.228472136",tid:33742,tl:228472136,b:"Child transaction start.",th:1443395379}]}},tt:0}},o={"":{t:0,ch:{srvc_node1:{t:3670416,ch:{req1:{t:352582,exe:"python /src/us.py",cont:"srvc_node1",ch:{srvc_node5:{t:234553,exe:"python /src/us.py",cont:"srvc_node5",ch:{req0:{t:1270469,exe:"python /src/us.py",cont:"srvc_node5",ch:{srvc_node4:{t:192735,exe:"python /src/us.py",cont:"srvc_node4",ch:{processing:{t:16425,exe:"python /src/us.py",cont:"srvc_node4",ch:{prepare:{t:723618,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:723618},run:{t:1491696,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:1491696},reduce:{t:476925,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:476925}},c:1,tt:2708664},data_write:{t:908561,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:908561}},c:1,tt:3809960,logs:[{t:"16:09:36.198634906",tid:33494,tl:198634906,b:"received connection.",th:1443395376}]}},c:1,tt:5080429},req1:{t:588185,exe:"python /src/us.py",cont:"srvc_node5",ch:{srvc_node3:{t:187177,exe:"python /src/us.py",cont:"srvc_node3",ch:{data_write:{t:906594,exe:"python /src/us.py",cont:"srvc_node3",ch:[],c:1,tt:906594}},c:1,tt:1093771,logs:[{t:"16:09:36.203118647",tid:33545,tl:203118647,b:"received connection.",th:1443395376}]}},c:1,tt:1681956}},c:1,tt:6996938,logs:[{t:"16:09:36.197538538",tid:33644,tl:197538538,b:"received connection.",th:1443395376}]}},c:1,tt:7349520,logs:[{t:"16:09:36.197230388",tid:33693,tl:197230388,b:"Sending request to srvc_next1",th:1443395376},{t:"16:09:36.197241147",tid:33693,tl:197241147,b:"warn: ciao",th:1443395376}]},req0:{t:905042,exe:"python /src/us.py",cont:"srvc_node1",ch:{srvc_node2:{t:189731,exe:"python /src/us.py",cont:"srvc_node2",ch:{req1:{t:751606,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node3:{t:200445,exe:"python /src/us.py",cont:"srvc_node3",ch:{data_write:{t:622858,exe:"python /src/us.py",cont:"srvc_node3",ch:[],c:1,tt:622858}},c:1,tt:823303,logs:[{t:"16:09:36.191247804",tid:33545,tl:191247804,b:"received connection.",th:1443395376}]}},c:1,tt:1574909},req0:{t:1817592,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node4:{t:367760,exe:"python /src/us.py",cont:"srvc_node4",ch:{processing:{t:30597,exe:"python /src/us.py",cont:"srvc_node4",ch:{prepare:{t:2172929,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:2172929},run:{t:2149540,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:2149540},reduce:{t:661186,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:661186}},c:1,tt:5014252},data_write:{t:830254,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:830254}},c:1,tt:6212266,logs:[{t:"16:09:36.184230289",tid:33494,tl:184230289,b:"received connection.",th:1443395376}]}},c:1,tt:8029858},req2:{t:552099,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node6:{t:185394,exe:"python /src/us.py",cont:"srvc_node6",ch:{processing:{t:18553,exe:"python /src/us.py",cont:"srvc_node6",ch:{prepare:{t:555674,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:555674},run:{t:1218322,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:1218322},reduce:{t:357704,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:357704}},c:1,tt:2150253}},c:1,tt:2335647,logs:[{t:"16:09:36.192630512",tid:33443,tl:192630512,b:"received connection.",th:1443395376}]}},c:1,tt:2887746}},c:1,tt:12682244,logs:[{t:"16:09:36.182532198",tid:33593,tl:182532198,b:"received connection.",th:1443395376}]}},c:1,tt:13587286,logs:[{t:"16:09:36.182136414",tid:33693,tl:182136414,b:"Sending request to srvc_next0",th:1443395376},{t:"16:09:36.182150700",tid:33693,tl:182150700,b:"warn: ciao",th:1443395376}]},processing:{t:19065,exe:"python /src/us.py",cont:"srvc_node1",ch:{prepare:{t:1141210,exe:"python /src/us.py",cont:"srvc_node1",ch:[],c:1,tt:1141210},run:{t:2964382,exe:"python /src/us.py",cont:"srvc_node1",ch:[],c:1,tt:2964382},reduce:{t:673708,exe:"python /src/us.py",cont:"srvc_node1",ch:[],c:1,tt:673708}},c:1,tt:4798365}},n:1,c:1,exe:"python /src/us.py",id:1,cont:"srvc_node1",tt:29405587,logs:[{t:"16:09:36.180025615",tid:33693,tl:180025615,b:"Child transaction start.",th:1443395376},{t:"16:09:36.196310214",tid:33693,tl:196310214,b:"Child transaction start.",th:1443395376}]},srvc_node7:{t:1730102,ch:{req1:{t:448507,exe:"python /src/us.py",cont:"srvc_node7",ch:{srvc_node6:{t:249291,exe:"python /src/us.py",cont:"srvc_node6",ch:{processing:{t:26268,exe:"python /src/us.py",cont:"srvc_node6",ch:{prepare:{t:939623,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:939623},run:{t:1526391,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:1526391},reduce:{t:487295,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:487295}},c:1,tt:2979577}},c:1,tt:3228868,logs:[{t:"16:09:37.489080341",tid:33443,tl:489080341,b:"received connection.",th:1443395377}]}},c:1,tt:3677375,logs:[{t:"16:09:37.488789594",tid:33742,tl:488789594,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.488804378",tid:33742,tl:488804378,b:"warn: ciao",th:1443395377}]},req0:{t:655751,exe:"python /src/us.py",cont:"srvc_node7",ch:{srvc_node2:{t:290884,exe:"python /src/us.py",cont:"srvc_node2",ch:{req1:{t:1242421,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node3:{t:305455,exe:"python /src/us.py",cont:"srvc_node3",ch:{data_write:{t:1060358,exe:"python /src/us.py",cont:"srvc_node3",ch:[],c:1,tt:1060358}},c:1,tt:1365813,logs:[{t:"16:09:37.481864408",tid:33545,tl:481864408,b:"received connection.",th:1443395377}]}},c:1,tt:2608234},req0:{t:946929,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node4:{t:195528,exe:"python /src/us.py",cont:"srvc_node4",ch:{processing:{t:25918,exe:"python /src/us.py",cont:"srvc_node4",ch:{prepare:{t:1048480,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:1048480},run:{t:2474922,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:2474922},reduce:{t:727003,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:727003}},c:1,tt:4276323},data_write:{t:1026208,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:1026208}},c:1,tt:5498059,logs:[{t:"16:09:37.475146458",tid:33494,tl:475146458,b:"received connection.",th:1443395377}]}},c:1,tt:6444988},req2:{t:783666,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node6:{t:330634,exe:"python /src/us.py",cont:"srvc_node6",ch:{processing:{t:27650,exe:"python /src/us.py",cont:"srvc_node6",ch:{prepare:{t:667354,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:667354},run:{t:1513167,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:1513167},reduce:{t:884363,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:884363}},c:1,tt:3092534}},c:1,tt:3423168,logs:[{t:"16:09:37.484091539",tid:33443,tl:484091539,b:"received connection.",th:1443395377}]}},c:1,tt:4206834}},c:1,tt:13550940,logs:[{t:"16:09:37.474421133",tid:33593,tl:474421133,b:"sent:8:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56293).sent:8:srvc_node1",th:1443395377}]}},c:1,tt:14206691,logs:[{t:"16:09:37.473982441",tid:33742,tl:473982441,b:"Sending request to srvc_next0",th:1443395377},{t:"16:09:37.474086669",tid:33742,tl:474086669,b:"warn: ciao",th:1443395377}]},processing:{t:34830,exe:"python /src/us.py",cont:"srvc_node7",ch:{prepare:{t:3132829,exe:"python /src/us.py",cont:"srvc_node7",ch:[],c:1,tt:3132829},run:{t:6287846,exe:"python /src/us.py",cont:"srvc_node7",ch:[],c:1,tt:6287846},reduce:{t:2014590,exe:"python /src/us.py",cont:"srvc_node7",ch:[],c:1,tt:2014590}},c:1,tt:11470095}},n:1,c:1,exe:"python /src/us.py",id:2,cont:"srvc_node7",tt:31084263,logs:[{t:"16:09:37.473073552",tid:33742,tl:473073552,b:"Child transaction start.",th:1443395377},{t:"16:09:37.488245552",tid:33742,tl:488245552,b:"Child transaction start.",th:1443395377}]}},tt:0}},l={"":{t:0,ch:{srvc_node1:{t:2099011,ch:{req1:{t:1049716,exe:"python /src/us.py",cont:"srvc_node1",ch:{srvc_node5:{t:300713,exe:"python /src/us.py",cont:"srvc_node5",ch:{req0:{t:1378524,exe:"python /src/us.py",cont:"srvc_node5",ch:{srvc_node4:{t:1182294,exe:"python /src/us.py",cont:"srvc_node4",ch:{processing:{t:49895,exe:"python /src/us.py",cont:"srvc_node4",ch:{prepare:{t:3281447,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:3281447},run:{t:4047272,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:4047272},reduce:{t:1227179,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:1227179}},c:1,tt:8605793},data_write:{t:19194475,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:19194475}},c:1,tt:28982562,logs:[{t:"16:09:37.036836790",tid:33494,tl:36836790,b:"received connection.",th:1443395377}]}},c:1,tt:30361086},req1:{t:1613020,exe:"python /src/us.py",cont:"srvc_node5",ch:{srvc_node3:{t:401681,exe:"python /src/us.py",cont:"srvc_node3",ch:{data_write:{t:9143111,exe:"python /src/us.py",cont:"srvc_node3",ch:[],c:1,tt:9143111}},c:1,tt:9544792,logs:[{t:"16:09:37.066982448",tid:33545,tl:66982448,b:"received connection.",th:1443395377}]}},c:1,tt:11157812}},c:1,tt:41819611,logs:[{t:"16:09:37.035193574",tid:33644,tl:35193574,b:"sent:5:srvc_node1.req1.srvc_node5.req0 ('172.17.0.216', 35946).sent:5:srvc_node1",th:1443395377}]}},c:1,tt:42869327,logs:[{t:"16:09:37.034700222",tid:33693,tl:34700222,b:"Sending request to srvc_next1",th:1443395377},{t:"16:09:37.034791254",tid:33693,tl:34791254,b:"warn: ciao",th:1443395377}]},req0:{t:533738,exe:"python /src/us.py",cont:"srvc_node1",ch:{srvc_node2:{t:173069,exe:"python /src/us.py",cont:"srvc_node2",ch:{req1:{t:12279085,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node3:{t:643634,exe:"python /src/us.py",cont:"srvc_node3",ch:{data_write:{t:9154976,exe:"python /src/us.py",cont:"srvc_node3",ch:[],c:1,tt:9154976}},c:1,tt:9798610,logs:[{t:"16:09:36.980059330",tid:33545,tl:980059330,b:"received connection.",th:1443395376}]}},c:1,tt:22077695},req0:{t:1303030,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node4:{t:491914,exe:"python /src/us.py",cont:"srvc_node4",ch:{processing:{t:56390,exe:"python /src/us.py",cont:"srvc_node4",ch:{prepare:{t:2331861,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:2331861},run:{t:3896257,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:3896257},reduce:{t:1468524,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:1468524}},c:1,tt:7753032},data_write:{t:2477366,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:2477366}},c:1,tt:10722312,logs:[{t:"16:09:36.956927519",tid:33494,tl:956927519,b:"received connection.",th:1443395376}]}},c:1,tt:12025342},req2:{t:38274042,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node6:{t:268118,exe:"python /src/us.py",cont:"srvc_node6",ch:{processing:{t:38238,exe:"python /src/us.py",cont:"srvc_node6",ch:{prepare:{t:1012248,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:1012248},run:{t:2690002,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:2690002},reduce:{t:831708,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:831708}},c:1,tt:4572196}},c:1,tt:4840314,logs:[{t:"16:09:37.028128833",tid:33443,tl:28128833,b:"received connection.",th:1443395377}]}},c:1,tt:43114356}},c:1,tt:77390462,logs:[{t:"16:09:36.955938497",tid:33593,tl:955938497,b:"sent:5:srvc_node1.req0.srvc_node2.req0 ('172.17.0.215', 56267).sent:5:srvc_node1",th:1443395376}]}},c:1,tt:77924200,logs:[{t:"16:09:36.955589515",tid:33693,tl:955589515,b:"Sending request to srvc_next0",th:1443395376},{t:"16:09:36.955595066",tid:33693,tl:955595066,b:"warn: ciao",th:1443395376}]},processing:{t:44678,exe:"python /src/us.py",cont:"srvc_node1",ch:{prepare:{t:2621695,exe:"python /src/us.py",cont:"srvc_node1",ch:[],c:1,tt:2621695},run:{t:5167336,exe:"python /src/us.py",cont:"srvc_node1",ch:[],c:1,tt:5167336},reduce:{t:2132952,exe:"python /src/us.py",cont:"srvc_node1",ch:[],c:1,tt:2132952}},c:1,tt:9966661}},n:1,c:1,exe:"python /src/us.py",id:6,cont:"srvc_node1",tt:132859199,logs:[{t:"16:09:36.954545280",tid:33693,tl:954545280,b:"Child transaction start.",th:1443395376},{t:"16:09:37.033684232",tid:33693,tl:33684232,b:"Child transaction start.",th:1443395377}]},srvc_node7:{t:1929205,ch:{req1:{t:205009,exe:"python /src/us.py",cont:"srvc_node7",ch:{srvc_node6:{t:106556,exe:"python /src/us.py",cont:"srvc_node6",ch:{processing:{t:11083,exe:"python /src/us.py",cont:"srvc_node6",ch:{prepare:{t:430114,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:430114},run:{t:976025,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:976025},reduce:{t:319060,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:319060}},c:1,tt:1736282}},c:1,tt:1842838,logs:[{t:"16:09:38.474406801",tid:33443,tl:474406801,b:"received connection.",th:1443395378}]}},c:1,tt:2047847,logs:[{t:"16:09:38.474329096",tid:33742,tl:474329096,b:"Sending request to srvc_next1",th:1443395378},{t:"16:09:38.474333813",tid:33742,tl:474333813,b:"warn: ciao",th:1443395378}]},req0:{t:983869,exe:"python /src/us.py",cont:"srvc_node7",ch:{srvc_node2:{t:508435,exe:"python /src/us.py",cont:"srvc_node2",ch:{req1:{t:631786,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node3:{t:181425,exe:"python /src/us.py",cont:"srvc_node3",ch:{data_write:{t:752342,exe:"python /src/us.py",cont:"srvc_node3",ch:[],c:1,tt:752342}},c:1,tt:933767,logs:[{t:"16:09:38.470036469",tid:33545,tl:470036469,b:"received connection.",th:1443395378}]}},c:1,tt:1565553},req0:{t:1407493,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node4:{t:533877,exe:"python /src/us.py",cont:"srvc_node4",ch:{processing:{t:51076,exe:"python /src/us.py",cont:"srvc_node4",ch:{prepare:{t:2079098,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:2079098},run:{t:4277685,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:4277685},reduce:{t:1151450,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:1151450}},c:1,tt:7559309},data_write:{t:423924368,exe:"python /src/us.py",cont:"srvc_node4",ch:[],c:1,tt:423924368}},c:1,tt:432017554,logs:[{t:"16:09:38.037652775",tid:33494,tl:37652775,b:"received connection.",th:1443395378}]}},c:1,tt:433425047},req2:{t:570162,exe:"python /src/us.py",cont:"srvc_node2",ch:{srvc_node6:{t:141870,exe:"python /src/us.py",cont:"srvc_node6",ch:{processing:{t:12609,exe:"python /src/us.py",cont:"srvc_node6",ch:{prepare:{t:455687,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:455687},run:{t:983876,exe:"python /src/us.py",cont:"srvc_node6",
-ch:[],c:1,tt:983876},reduce:{t:319166,exe:"python /src/us.py",cont:"srvc_node6",ch:[],c:1,tt:319166}},c:1,tt:1771338}},c:1,tt:1913208,logs:[{t:"16:09:38.471589980",tid:33443,tl:471589980,b:"received connection.",th:1443395378}]}},c:1,tt:2483370}},c:1,tt:437982405,logs:[{t:"16:09:38.036076408",tid:33593,tl:36076408,b:"sent:4:srvc_node7.req0.srvc_node2.req0 ('172.17.0.215', 56322).sent:4:srvc_node7",th:1443395378}]}},c:1,tt:438966274,logs:[{t:"16:09:38.034872668",tid:33742,tl:34872668,b:"Sending request to srvc_next0",th:1443395378},{t:"16:09:38.034933977",tid:33742,tl:34933977,b:"warn: ciao",th:1443395378}]},processing:{t:14148,exe:"python /src/us.py",cont:"srvc_node7",ch:{prepare:{t:1980191,exe:"python /src/us.py",cont:"srvc_node7",ch:[],c:1,tt:1980191},run:{t:3858854,exe:"python /src/us.py",cont:"srvc_node7",ch:[],c:1,tt:3858854},reduce:{t:1314157,exe:"python /src/us.py",cont:"srvc_node7",ch:[],c:1,tt:1314157}},c:1,tt:7167350}},n:1,c:1,exe:"python /src/us.py",id:5,cont:"srvc_node7",tt:450110676,logs:[{t:"16:09:38.033738598",tid:33742,tl:33738598,b:"Child transaction start.",th:1443395378},{t:"16:09:38.473860709",tid:33742,tl:473860709,b:"Child transaction start.",th:1443395378}]}},tt:0}}}),define("flame-ui/templates/application",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:1,column:38}},moduleName:"flame-ui/templates/application.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["inline","app-container",[],["transactions",["subexpr","@mut",[["get","model",["loc",[null,[1,31],[1,36]]]]],[],[]]],["loc",[null,[1,0],[1,38]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/app-container",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){var e=function(){var e=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:20,column:4},end:{line:28,column:4}},moduleName:"flame-ui/templates/components/app-container.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("        ");e.appendChild(t,n);var n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,1,1,n),r},statements:[["inline","span-log",[],["span",["subexpr","@mut",[["get","span",["loc",[null,[22,26],[22,30]]]]],[],[]],"spanMode",["subexpr","@mut",[["get","spanMode",["loc",[null,[23,26],[23,34]]]]],[],[]],"log",["subexpr","@mut",[["get","spanLog",["loc",[null,[24,26],[24,33]]]]],[],[]],"selectMode","selectSpanMode","class","row-1"],["loc",[null,[21,8],[27,10]]]]],locals:[],templates:[]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:10,column:0},end:{line:29,column:0}},moduleName:"flame-ui/templates/components/app-container.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("    ");e.appendChild(t,n);var n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n\n");e.appendChild(t,n);var n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(2);return r[0]=e.createMorphAt(t,1,1,n),r[1]=e.createMorphAt(t,3,3,n),e.insertBoundary(t,null),r},statements:[["inline","flame-ui",[],["node",["subexpr","@mut",[["get","transaction",["loc",[null,[12,18],[12,29]]]]],[],[]],"op",["subexpr","@mut",[["get","aggregation",["loc",[null,[13,18],[13,29]]]]],[],[]],"data",["subexpr","@mut",[["get","transactionData",["loc",[null,[14,18],[14,33]]]]],[],[]],"select","selectSpan","class",["subexpr","@mut",[["get","chartPanelSize",["loc",[null,[16,18],[16,32]]]]],[],[]],"changeAggregation","changeAggregation"],["loc",[null,[11,4],[18,6]]]],["block","if",[["get","span",["loc",[null,[20,10],[20,14]]]]],[],0,null,["loc",[null,[20,4],[28,11]]]]],locals:[],templates:[e]}}();return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type","multiple-nodes"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:30,column:0}},moduleName:"flame-ui/templates/components/app-container.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n\n");e.appendChild(t,n);var n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n\n");e.appendChild(t,n);var n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(3);return r[0]=e.createMorphAt(t,0,0,n),r[1]=e.createMorphAt(t,2,2,n),r[2]=e.createMorphAt(t,4,4,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["inline","sd-header",[],["class","-fixed"],["loc",[null,[1,0],[1,28]]]],["inline","transactions-table",[],["transactions",["subexpr","@mut",[["get","transactions",["loc",[null,[4,19],[4,31]]]]],[],[]],"selected",["subexpr","@mut",[["get","transaction",["loc",[null,[5,19],[5,30]]]]],[],[]],"select","selectTransaction","class","row-1"],["loc",[null,[3,0],[8,2]]]],["block","if",[["get","transaction",["loc",[null,[10,6],[10,17]]]]],[],0,null,["loc",[null,[10,0],[29,7]]]]],locals:[],templates:[e]}}())}),define("flame-ui/templates/components/flame-ui",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){var e=function(){var e=function(){var e=function(){var e=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:11,column:20},end:{line:13,column:20}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("                        ");e.appendChild(t,n);var n=e.createElement("button"),r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[1]),a=new Array(2);return a[0]=e.createElementMorph(r),a[1]=e.createMorphAt(r,0,0),a},statements:[["element","action",["changeAggregation",["get","option.value",["loc",[null,[12,61],[12,73]]]]],[],["loc",[null,[12,32],[12,75]]]],["content","option.name",["loc",[null,[12,76],[12,91]]]]],locals:[],templates:[]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:10,column:16},end:{line:14,column:16}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:1,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","sd-tab-item",[],["value",["subexpr","@mut",[["get","option.value",["loc",[null,[11,41],[11,53]]]]],[],[]],"activeTab",["subexpr","@mut",[["get","list.activeTab",["loc",[null,[11,64],[11,78]]]]],[],[]],"activateTab","activateTab","registerTab","registerTab","targetObject",["subexpr","@mut",[["get","list",["loc",[null,[11,144],[11,148]]]]],[],[]]],0,null,["loc",[null,[11,20],[13,36]]]]],locals:["option"],templates:[e]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:9,column:12},end:{line:15,column:12}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:1,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","each",[["get","aggregationOptions",["loc",[null,[10,24],[10,42]]]]],[],0,null,["loc",[null,[10,16],[14,25]]]]],locals:["list"],templates:[e]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:2,column:4},end:{line:17,column:4}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("        ");e.appendChild(t,n);var n=e.createElement("h1");e.setAttribute(n,"class","title");var r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n\n        ");e.appendChild(t,n);var n=e.createElement("div");e.setAttribute(n,"class","spacer"),e.appendChild(t,n);var n=e.createTextNode("\n\n        ");e.appendChild(t,n);var n=e.createElement("span");e.setAttribute(n,"class","text");var r=e.createTextNode("\n            Aggregate by\n");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r);var r=e.createTextNode("        ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(2);return r[0]=e.createMorphAt(e.childAt(t,[1]),0,0),r[1]=e.createMorphAt(e.childAt(t,[5]),1,1),r},statements:[["content","node",["loc",[null,[3,26],[3,34]]]],["block","sd-tabs-list",[],["activeTab",["subexpr","@mut",[["get","op",["loc",[null,[9,38],[9,40]]]]],[],[]]],0,null,["loc",[null,[9,12],[15,29]]]]],locals:[],templates:[e]}}(),t=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:20,column:8},end:{line:25,column:8}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("            ");e.appendChild(t,n);var n=e.createElement("div");e.setAttribute(n,"id","chart"),e.appendChild(t,n);var n=e.createTextNode("\n            ");e.appendChild(t,n);var n=e.createElement("div");e.setAttribute(n,"style","position: relative");var r=e.createTextNode("\n                ");e.appendChild(n,r);var r=e.createElement("div");e.setAttribute(r,"id","svPopout"),e.appendChild(n,r);var r=e.createTextNode("\n            ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(){return[]},statements:[],locals:[],templates:[]}}(),n=function(){var e=function(){var e=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:35,column:24},end:{line:40,column:24}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:1,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("                            ");e.appendChild(t,n);var n=e.createElement("tr");e.setAttribute(n,"class","tr -no-border");var r=e.createTextNode("\n                                ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -icon");var a=e.createElement("i");e.setAttribute(a,"class","material-icons");var c=e.createTextNode("lens");e.appendChild(a,c),e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                                ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -string");var a=e.createComment("");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                            ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[1]),a=e.childAt(r,[1,0]),c=new Array(3);return c[0]=e.createAttrMorph(r,"style"),c[1]=e.createAttrMorph(a,"style"),c[2]=e.createMorphAt(e.childAt(r,[3]),0,0),c},statements:[["attribute","style",["get","line.color",["loc",[null,[36,62],[36,72]]]]],["attribute","style",["get","item.color",["loc",[null,[37,87],[37,97]]]]],["content","item.name",["loc",[null,[38,55],[38,68]]]]],locals:["item"],templates:[]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:28,column:12},end:{line:43,column:12}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("                ");e.appendChild(t,n);var n=e.createElement("table");e.setAttribute(n,"class","table");var r=e.createTextNode("\n                    ");e.appendChild(n,r);var r=e.createElement("thead");e.setAttribute(r,"class","thead");var a=e.createTextNode("\n                        ");e.appendChild(r,a);var a=e.createElement("th");e.setAttribute(a,"class","th -icon"),e.appendChild(r,a);var a=e.createTextNode("\n                        ");e.appendChild(r,a);var a=e.createElement("th");e.setAttribute(a,"class","th -string");var c=e.createTextNode("Containers");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n                    ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                    ");e.appendChild(n,r);var r=e.createElement("tbody");e.setAttribute(r,"class","tbody -compact");var a=e.createTextNode("\n");e.appendChild(r,a);var a=e.createComment("");e.appendChild(r,a);var a=e.createTextNode("                    ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(e.childAt(t,[1,3]),1,1),r},statements:[["block","each",[["get","legendItems",["loc",[null,[35,32],[35,43]]]]],[],0,null,["loc",[null,[35,24],[40,33]]]]],locals:[],templates:[e]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:27,column:8},end:{line:44,column:8}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","sd-table",[],[],0,null,["loc",[null,[28,12],[43,25]]]]],locals:[],templates:[e]}}(),r=function(){var e=function(){var e=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:55,column:12},end:{line:58,column:12}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("                ");e.appendChild(t,n);var n=e.createElement("br");e.appendChild(t,n);var n=e.createTextNode("\n                ");e.appendChild(t,n);var n=e.createElement("strong"),r=e.createTextNode("NOTE: this node has ");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r);var r=e.createTextNode(" childs. Only the slowest one is shown.");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(e.childAt(t,[3]),1,1),r},statements:[["content","activeSpan.childCount",["loc",[null,[57,44],[57,69]]]]],locals:[],templates:[]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:48,column:8},end:{line:59,column:8}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("            ");e.appendChild(t,n);var n=e.createElement("strong"),r=e.createComment("");e.appendChild(n,r);var r=e.createTextNode(" –");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n            Container:                      ");e.appendChild(t,n);var n=e.createElement("b"),r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n            Command Line:                   ");e.appendChild(t,n);var n=e.createElement("b"),r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n            Time in this node and childs:   ");e.appendChild(t,n);var n=e.createElement("b"),r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n            Time in this node:              ");e.appendChild(t,n);var n=e.createElement("b"),r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n\n");e.appendChild(t,n);var n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(6);return r[0]=e.createMorphAt(e.childAt(t,[1]),0,0),r[1]=e.createMorphAt(e.childAt(t,[3]),0,0),r[2]=e.createMorphAt(e.childAt(t,[5]),0,0),r[3]=e.createMorphAt(e.childAt(t,[7]),0,0),r[4]=e.createMorphAt(e.childAt(t,[9]),0,0),r[5]=e.createMorphAt(t,11,11,n),e.insertBoundary(t,null),r},statements:[["content","activeSpan.name",["loc",[null,[49,20],[49,39]]]],["content","activeSpan.container",["loc",[null,[50,47],[50,71]]]],["content","activeSpan.container",["loc",[null,[51,47],[51,71]]]],["content","activeSpan.container",["loc",[null,[52,47],[52,71]]]],["content","activeSpan.timeInNode",["loc",[null,[53,47],[53,72]]]],["block","if",[["get","activeSpan.childCount",["loc",[null,[55,18],[55,39]]]]],[],0,null,["loc",[null,[55,12],[58,19]]]]],locals:[],templates:[e]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:47,column:4},end:{line:60,column:4}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","if",[["get","activeSpan",["loc",[null,[48,14],[48,24]]]]],[],0,null,["loc",[null,[48,8],[59,15]]]]],locals:[],templates:[e]}}();return{meta:{fragmentReason:{name:"triple-curlies"},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:62,column:0}},moduleName:"flame-ui/templates/components/flame-ui.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createElement("div");e.setAttribute(n,"class","flex-scaffholding -column");var r=e.createTextNode("\n");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r);var r=e.createTextNode("\n    ");e.appendChild(n,r);var r=e.createElement("div");e.setAttribute(r,"class","flex-scaffholding -row flex-grow");var a=e.createTextNode("\n");e.appendChild(r,a);var a=e.createComment("");e.appendChild(r,a);var a=e.createTextNode("\n");e.appendChild(r,a);var a=e.createComment("");e.appendChild(r,a);var a=e.createTextNode("    ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n\n");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[0]),a=e.childAt(r,[3]),c=new Array(4);return c[0]=e.createMorphAt(r,1,1),c[1]=e.createMorphAt(a,1,1),c[2]=e.createMorphAt(a,3,3),c[3]=e.createMorphAt(r,5,5),c},statements:[["block","sd-panel-header",[],[],0,null,["loc",[null,[2,4],[17,24]]]],["block","sd-panel-content",[],["class","flex-grow -overflow-visible -flexbox"],1,null,["loc",[null,[20,8],[25,29]]]],["block","sd-panel-sidebar",[],[],2,null,["loc",[null,[27,8],[44,29]]]],["block","sd-panel-footer",[],[],3,null,["loc",[null,[47,4],[60,24]]]]],locals:[],templates:[e,t,n,r]}}())}),define("flame-ui/templates/components/input-toggle",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type","multiple-nodes"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:3,column:0}},moduleName:"flame-ui/templates/components/input-toggle.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");e.appendChild(t,n);var n=e.createElement("span");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[2]),a=new Array(2);return a[0]=e.createMorphAt(t,0,0,n),a[1]=e.createElementMorph(r),e.insertBoundary(t,0),a},statements:[["inline","input",[],["type","checkbox","name",["subexpr","@mut",[["get","name",["loc",[null,[1,29],[1,33]]]]],[],[]],"checked",["subexpr","@mut",[["get","checked",["loc",[null,[1,42],[1,49]]]]],[],[]],"disabled",["subexpr","@mut",[["get","disabled",["loc",[null,[1,59],[1,67]]]]],[],[]],"readonly",["subexpr","@mut",[["get","readonly",["loc",[null,[1,77],[1,85]]]]],[],[]]],["loc",[null,[1,0],[1,87]]]],["element","action",["toggle"],[],["loc",[null,[2,6],[2,25]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/s-panel-sidebar",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:2,column:0}},moduleName:"flame-ui/templates/components/s-panel-sidebar.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),r},statements:[["content","yield",["loc",[null,[1,0],[1,9]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/sd-dropdown-item",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){var e=function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:3,column:0}},moduleName:"flame-ui/templates/components/sd-dropdown-item.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("    ");e.appendChild(t,n);var n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,1,1,n),r},statements:[["content","yield",["loc",[null,[2,4],[2,13]]]]],locals:[],templates:[]}}(),t=function(){var e=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:4,column:4},end:{line:6,column:4}},moduleName:"flame-ui/templates/components/sd-dropdown-item.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("        ");e.appendChild(t,n);var n=e.createElement("a");e.setAttribute(n,"href","#0"),e.setAttribute(n,"class","item -selected");var r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[1]),a=new Array(2);return a[0]=e.createElementMorph(r),a[1]=e.createMorphAt(r,0,0),a},statements:[["element","action",["setDropdownStatus",!1],[],["loc",[null,[5,44],[5,80]]]],["content","item.name",["loc",[null,[5,81],[5,94]]]]],locals:[],templates:[]}}(),t=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:6,column:4},end:{line:8,column:4}},moduleName:"flame-ui/templates/components/sd-dropdown-item.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("        ");e.appendChild(t,n);var n=e.createElement("a");e.setAttribute(n,"href","#0"),e.setAttribute(n,"class","item");var r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[1]),a=new Array(2);return a[0]=e.createElementMorph(r),a[1]=e.createMorphAt(r,0,0),a},statements:[["element","action",["selectOption",["get","item.value",["loc",[null,[7,58],[7,68]]]]],[],["loc",[null,[7,34],[7,70]]]],["content","item.name",["loc",[null,[7,71],[7,84]]]]],locals:[],templates:[]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:3,column:0},end:{line:9,column:0}},moduleName:"flame-ui/templates/components/sd-dropdown-item.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","if",[["get","isSelected",["loc",[null,[4,10],[4,20]]]]],[],0,1,["loc",[null,[4,4],[8,11]]]]],locals:[],templates:[e,t]}}();return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:10,column:0}},moduleName:"flame-ui/templates/components/sd-dropdown-item.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","if",[["get","hasBlock",["loc",[null,[1,6],[1,14]]]]],[],0,1,["loc",[null,[1,0],[9,7]]]]],locals:[],templates:[e,t]}}())}),define("flame-ui/templates/components/sd-dropdown-trigger",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:2,column:0}},moduleName:"flame-ui/templates/components/sd-dropdown-trigger.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),r},statements:[["content","yield",["loc",[null,[1,0],[1,9]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/sd-dropdown",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){var e=function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:7,column:0}},moduleName:"flame-ui/templates/components/sd-dropdown.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("    ");e.appendChild(t,n);var n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,1,1,n),r},statements:[["content","label",["loc",[null,[6,4],[6,13]]]]],locals:[],templates:[]}}(),t=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:11,column:8},end:{line:18,column:8}},moduleName:"flame-ui/templates/components/sd-dropdown.hbs"},isEmpty:!1,arity:1,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("            ");e.appendChild(t,n);var n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,1,1,n),r},statements:[["inline","sd-dropdown-item",[],["item",["subexpr","@mut",[["get","item",["loc",[null,[13,36],[13,40]]]]],[],[]],"selectedOption",["subexpr","@mut",[["get","selectedOption",["loc",[null,[14,36],[14,50]]]]],[],[]],"selectOption","selectOption","setDropdownStatus","setDropdownStatus"],["loc",[null,[12,12],[17,10]]]]],locals:["item"],templates:[]}}();return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type","multiple-nodes"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:21,column:0}},moduleName:"flame-ui/templates/components/sd-dropdown.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");e.appendChild(t,n);var n=e.createElement("div");e.setAttribute(n,"class","sd-dropdown");var r=e.createTextNode("\n    ");e.appendChild(n,r);var r=e.createElement("ul");e.setAttribute(r,"class","list");var a=e.createTextNode("\n");e.appendChild(r,a);var a=e.createComment("");e.appendChild(r,a);var a=e.createTextNode("    ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(2);return r[0]=e.createMorphAt(t,0,0,n),r[1]=e.createMorphAt(e.childAt(t,[2,1]),1,1),e.insertBoundary(t,0),r},statements:[["block","sd-dropdown-trigger",[],["class",["subexpr","@mut",[["get","buttonClasses",["loc",[null,[2,22],[2,35]]]]],[],[]],"toggleDropdown","toggleDropdown","setupHeight","setupHeight"],0,null,["loc",[null,[1,0],[7,24]]]],["block","each",[["get","items",["loc",[null,[11,16],[11,21]]]]],[],1,null,["loc",[null,[11,8],[18,17]]]]],locals:[],templates:[e,t]}}())}),define("flame-ui/templates/components/sd-header",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){var e=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:2,column:4},end:{line:4,column:4}},moduleName:"flame-ui/templates/components/sd-header.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("        ");e.appendChild(t,n);var n=e.createElement("img");e.setAttribute(n,"src","sysdig_white.svg"),e.setAttribute(n,"onerror","this.src = 'sysdig_white.png'"),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(){return[]},statements:[],locals:[],templates:[]}}();return{meta:{fragmentReason:{name:"missing-wrapper",problems:["multiple-nodes"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:10,column:0}},moduleName:"flame-ui/templates/components/sd-header.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createElement("nav");e.setAttribute(n,"class","navigator -align-left");var r=e.createTextNode("\n");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");e.appendChild(t,n);var n=e.createElement("div");e.setAttribute(n,"class","separator"),e.appendChild(t,n);var n=e.createTextNode("\n");e.appendChild(t,n);var n=e.createElement("nav");e.setAttribute(n,"class","navigator -align-right");var r=e.createTextNode("\n    ");e.appendChild(n,r);var r=e.createElement("a");e.setAttribute(r,"href","#"),e.setAttribute(r,"class","item");var a=e.createElement("i");e.setAttribute(a,"class","material-icons");var c=e.createTextNode("help");e.appendChild(a,c),
-e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(e.childAt(t,[0]),1,1),r},statements:[["block","link-to",["index"],["class","logo"],0,null,["loc",[null,[2,4],[4,16]]]]],locals:[],templates:[e]}}())}),define("flame-ui/templates/components/sd-panel-content",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:2,column:0}},moduleName:"flame-ui/templates/components/sd-panel-content.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),r},statements:[["content","yield",["loc",[null,[1,0],[1,9]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/sd-panel-footer",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:2,column:0}},moduleName:"flame-ui/templates/components/sd-panel-footer.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),r},statements:[["content","yield",["loc",[null,[1,0],[1,9]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/sd-panel-header",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:2,column:0}},moduleName:"flame-ui/templates/components/sd-panel-header.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),r},statements:[["content","yield",["loc",[null,[1,0],[1,9]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/sd-panel",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:2,column:0}},moduleName:"flame-ui/templates/components/sd-panel.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),r},statements:[["content","yield",["loc",[null,[1,0],[1,9]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/sd-tab-item",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:2,column:0}},moduleName:"flame-ui/templates/components/sd-tab-item.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),r},statements:[["content","yield",["loc",[null,[1,0],[1,9]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/sd-table",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:6,column:0}},moduleName:"flame-ui/templates/components/sd-table.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createElement("div"),r=e.createTextNode("\n    ");e.appendChild(n,r);var r=e.createElement("table");e.setAttribute(r,"class","table");var a=e.createTextNode("\n        ");e.appendChild(r,a);var a=e.createComment("");e.appendChild(r,a);var a=e.createTextNode("\n    ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[0]),a=new Array(2);return a[0]=e.createAttrMorph(r,"class"),a[1]=e.createMorphAt(e.childAt(r,[1]),1,1),a},statements:[["attribute","class",["subexpr","if",[["get","hasStickHeader",["loc",[null,[1,16],[1,30]]]],"sd-table-inner"],[],["loc",[null,[1,11],[1,49]]]]],["content","yield",["loc",[null,[3,8],[3,17]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/sd-tabs-list",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:2,column:0}},moduleName:"flame-ui/templates/components/sd-tabs-list.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),r},statements:[["inline","yield",[["get","this",["loc",[null,[1,8],[1,12]]]]],[],["loc",[null,[1,0],[1,14]]]]],locals:[],templates:[]}}())}),define("flame-ui/templates/components/span-log",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){var e=function(){var e=function(){var e=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:6,column:16},end:{line:8,column:16}},moduleName:"flame-ui/templates/components/span-log.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("                    ");e.appendChild(t,n);var n=e.createElement("button"),r=e.createTextNode("this span only");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[1]),a=new Array(1);return a[0]=e.createElementMorph(r),a},statements:[["element","action",["selectMode","SPAN"],[],["loc",[null,[7,28],[7,58]]]]],locals:[],templates:[]}}(),t=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:9,column:16},end:{line:11,column:16}},moduleName:"flame-ui/templates/components/span-log.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("                    ");e.appendChild(t,n);var n=e.createElement("button"),r=e.createTextNode("this span and children");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[1]),a=new Array(1);return a[0]=e.createElementMorph(r),a},statements:[["element","action",["selectMode","SPAN_CHILD"],[],["loc",[null,[10,28],[10,64]]]]],locals:[],templates:[]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:5,column:12},end:{line:12,column:12}},moduleName:"flame-ui/templates/components/span-log.hbs"},isEmpty:!1,arity:1,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(2);return r[0]=e.createMorphAt(t,0,0,n),r[1]=e.createMorphAt(t,1,1,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","sd-tab-item",[],["value","1","activeTab",["subexpr","@mut",[["get","list.activeTab",["loc",[null,[6,51],[6,65]]]]],[],[]],"activateTab","activateTab","registerTab","registerTab","targetObject",["subexpr","@mut",[["get","list",["loc",[null,[6,131],[6,135]]]]],[],[]]],0,null,["loc",[null,[6,16],[8,32]]]],["block","sd-tab-item",[],["value","2","activeTab",["subexpr","@mut",[["get","list.activeTab",["loc",[null,[9,51],[9,65]]]]],[],[]],"activateTab","activateTab","registerTab","registerTab","targetObject",["subexpr","@mut",[["get","list",["loc",[null,[9,131],[9,135]]]]],[],[]]],1,null,["loc",[null,[9,16],[11,32]]]]],locals:["list"],templates:[e,t]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:2,column:4},end:{line:14,column:4}},moduleName:"flame-ui/templates/components/span-log.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("        ");e.appendChild(t,n);var n=e.createElement("span");e.setAttribute(n,"class","text");var r=e.createTextNode("\n            Logs for\n");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r);var r=e.createTextNode("        ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(e.childAt(t,[1]),1,1),r},statements:[["block","sd-tabs-list",[],[],0,null,["loc",[null,[5,12],[12,29]]]]],locals:[],templates:[e]}}(),t=function(){var e=function(){var e=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:34,column:16},end:{line:42,column:16}},moduleName:"flame-ui/templates/components/span-log.hbs"},isEmpty:!1,arity:1,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("                    ");e.appendChild(t,n);var n=e.createElement("tr");e.setAttribute(n,"class","tr");var r=e.createTextNode("\n                        ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -icon");var a=e.createElement("i");e.setAttribute(a,"class","material-icons");var c=e.createTextNode("lens");e.appendChild(a,c),e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                        ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -string");var a=e.createComment("");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                        ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -string");var a=e.createComment("");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                        ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -number");var a=e.createComment("");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                        ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -string"),e.setAttribute(r,"colspan","3");var a=e.createComment("");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                    ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[1]),a=e.childAt(r,[1,0]),c=new Array(6);return c[0]=e.createAttrMorph(r,"style"),c[1]=e.createAttrMorph(a,"style"),c[2]=e.createMorphAt(e.childAt(r,[3]),0,0),c[3]=e.createMorphAt(e.childAt(r,[5]),0,0),c[4]=e.createMorphAt(e.childAt(r,[7]),0,0),c[5]=e.createMorphAt(e.childAt(r,[9]),0,0),c},statements:[["attribute","style",["get","line.color",["loc",[null,[35,43],[35,53]]]]],["attribute","style",["get","line.lineColor",["loc",[null,[36,79],[36,93]]]]],["content","line.containerName",["loc",[null,[37,47],[37,69]]]],["content","line.k",["loc",[null,[38,47],[38,57]]]],["content","line.t",["loc",[null,[39,47],[39,57]]]],["content","line.b",["loc",[null,[40,59],[40,69]]]]],locals:["line"],templates:[]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:17,column:8},end:{line:44,column:8}},moduleName:"flame-ui/templates/components/span-log.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("            ");e.appendChild(t,n);var n=e.createElement("thead");e.setAttribute(n,"class","thead");var r=e.createTextNode("\n                ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -icon"),e.appendChild(n,r);var r=e.createTextNode("\n                ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -string");var a=e.createTextNode("\n                    ");e.appendChild(r,a);var a=e.createElement("div");e.setAttribute(a,"class","th-inner");var c=e.createTextNode("Container");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n                ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -string");var a=e.createTextNode("\n                    ");e.appendChild(r,a);var a=e.createElement("div");e.setAttribute(a,"class","th-inner");var c=e.createTextNode("K");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n                        ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -number");var a=e.createTextNode("\n                    ");e.appendChild(r,a);var a=e.createElement("div");e.setAttribute(a,"class","th-inner");var c=e.createTextNode("Date and Time");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n                ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -string"),e.setAttribute(r,"colspan","3");var a=e.createTextNode("\n                    ");e.appendChild(r,a);var a=e.createElement("div");e.setAttribute(a,"class","th-inner");var c=e.createTextNode("Message");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n                ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n            ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n            ");e.appendChild(t,n);var n=e.createElement("tbody");e.setAttribute(n,"class","tbody -compact");var r=e.createTextNode("\n");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r);var r=e.createTextNode("            ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(e.childAt(t,[3]),1,1),r},statements:[["block","each",[["get","lines",["loc",[null,[34,24],[34,29]]]]],["key","@index"],0,null,["loc",[null,[34,16],[42,25]]]]],locals:[],templates:[e]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:16,column:4},end:{line:45,column:4}},moduleName:"flame-ui/templates/components/span-log.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","sd-table",[],["sticky",!0],0,null,["loc",[null,[17,8],[44,21]]]]],locals:[],templates:[e]}}();return{meta:{fragmentReason:{name:"triple-curlies"},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:47,column:0}},moduleName:"flame-ui/templates/components/span-log.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createElement("div");e.setAttribute(n,"class","flex-scaffholding -column");var r=e.createTextNode("\n");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r);var r=e.createTextNode("\n");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[0]),a=new Array(2);return a[0]=e.createMorphAt(r,1,1),a[1]=e.createMorphAt(r,3,3),a},statements:[["block","sd-panel-header",[],[],0,null,["loc",[null,[2,4],[14,24]]]],["block","sd-panel-content",[],["class","flex-grow -no-padding -flexbox"],1,null,["loc",[null,[16,4],[45,25]]]]],locals:[],templates:[e,t]}}())}),define("flame-ui/templates/components/transactions-table",["exports"],function(e){e["default"]=Ember.HTMLBars.template(function(){var e=function(){return{meta:{fragmentReason:{name:"triple-curlies"},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:3,column:0}},moduleName:"flame-ui/templates/components/transactions-table.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("    ");e.appendChild(t,n);var n=e.createElement("h1");e.setAttribute(n,"class","title");var r=e.createTextNode("Transactions");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(){return[]},statements:[],locals:[],templates:[]}}(),t=function(){var e=function(){var e=function(){return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:25,column:12},end:{line:33,column:12}},moduleName:"flame-ui/templates/components/transactions-table.hbs"},isEmpty:!1,arity:1,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("                ");e.appendChild(t,n);var n=e.createElement("tr"),r=e.createTextNode("\n                    ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -string");var a=e.createComment("");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                    ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -number");var a=e.createComment("");e.appendChild(r,a);var a=e.createTextNode(" calls");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                    ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -number");var a=e.createElement("a");e.setAttribute(a,"href","#0");var c=e.createComment("");e.appendChild(a,c),e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                    ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -number");var a=e.createElement("a");e.setAttribute(a,"href","#0");var c=e.createComment("");e.appendChild(a,c),e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                    ");e.appendChild(n,r);var r=e.createElement("td");e.setAttribute(r,"class","td -number");var a=e.createElement("a");e.setAttribute(a,"href","#0");var c=e.createComment("");e.appendChild(a,c),e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n                ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=e.childAt(t,[1]),a=e.childAt(r,[5,0]),c=e.childAt(r,[7,0]),o=e.childAt(r,[9,0]),l=new Array(10);return l[0]=e.createAttrMorph(r,"class"),l[1]=e.createElementMorph(r),l[2]=e.createMorphAt(e.childAt(r,[1]),0,0),l[3]=e.createMorphAt(e.childAt(r,[3]),0,0),l[4]=e.createElementMorph(a),l[5]=e.createMorphAt(a,0,0),l[6]=e.createElementMorph(c),l[7]=e.createMorphAt(c,0,0),l[8]=e.createElementMorph(o),l[9]=e.createMorphAt(o,0,0),l},statements:[["attribute","class",["concat",["tr -link ",["subexpr","if",[["subexpr","is-equal",[],["a",["get","transaction.node",["loc",[null,[26,53],[26,69]]]],"b",["get","selected",["loc",[null,[26,72],[26,80]]]]],["loc",[null,[26,41],[26,81]]]],"-selected"],[],["loc",[null,[26,36],[26,95]]]]]]],["element","action",["select",["get","transaction.node",["loc",[null,[26,115],[26,131]]]]],[],["loc",[null,[26,97],[26,133]]]],["content","transaction.node",["loc",[null,[27,43],[27,63]]]],["content","transaction.n",["loc",[null,[28,43],[28,60]]]],["element","action",["select",["get","transaction.node",["loc",[null,[29,74],[29,90]]]],"avg"],["bubbles",!1],["loc",[null,[29,56],[29,112]]]],["content","transaction.avg",["loc",[null,[29,113],[29,132]]]],["element","action",["select",["get","transaction.node",["loc",[null,[30,74],[30,90]]]],"min"],["bubbles",!1],["loc",[null,[30,56],[30,112]]]],["content","transaction.min",["loc",[null,[30,113],[30,132]]]],["element","action",["select",["get","transaction.node",["loc",[null,[31,74],[31,90]]]],"max"],["bubbles",!1],["loc",[null,[31,56],[31,112]]]],["content","transaction.max",["loc",[null,[31,113],[31,132]]]]],locals:["transaction"],templates:[]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:6,column:4},end:{line:35,column:4}},moduleName:"flame-ui/templates/components/transactions-table.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createTextNode("        ");e.appendChild(t,n);var n=e.createElement("thead");e.setAttribute(n,"class","thead");var r=e.createTextNode("\n            ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -string");var a=e.createTextNode("\n                ");e.appendChild(r,a);var a=e.createElement("div");e.setAttribute(a,"class","th-inner");var c=e.createTextNode("Node");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n            ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n            ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -number");var a=e.createTextNode("\n                ");e.appendChild(r,a);var a=e.createElement("div");e.setAttribute(a,"class","th-inner");var c=e.createTextNode("Calls");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n            ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n            ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -number");var a=e.createTextNode("\n                ");e.appendChild(r,a);var a=e.createElement("div");e.setAttribute(a,"class","th-inner");var c=e.createTextNode("Avg Time");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n            ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n            ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -number");var a=e.createTextNode("\n                ");e.appendChild(r,a);var a=e.createElement("div");e.setAttribute(a,"class","th-inner");var c=e.createTextNode("Min Time");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n            ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n            ");e.appendChild(n,r);var r=e.createElement("th");e.setAttribute(r,"class","th -number");var a=e.createTextNode("\n                ");e.appendChild(r,a);var a=e.createElement("div");e.setAttribute(a,"class","th-inner");var c=e.createTextNode("Max Time");e.appendChild(a,c),e.appendChild(r,a);var a=e.createTextNode("\n            ");e.appendChild(r,a),e.appendChild(n,r);var r=e.createTextNode("\n        ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n        ");e.appendChild(t,n);var n=e.createElement("tbody");e.setAttribute(n,"class","tbody");var r=e.createTextNode("\n");e.appendChild(n,r);var r=e.createComment("");e.appendChild(n,r);var r=e.createTextNode("        ");e.appendChild(n,r),e.appendChild(t,n);var n=e.createTextNode("\n");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(e.childAt(t,[3]),1,1),r},statements:[["block","each",[["get","transactions",["loc",[null,[25,20],[25,32]]]]],[],0,null,["loc",[null,[25,12],[33,21]]]]],locals:[],templates:[e]}}();return{meta:{fragmentReason:!1,revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:5,column:0},end:{line:36,column:0}},moduleName:"flame-ui/templates/components/transactions-table.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(1);return r[0]=e.createMorphAt(t,0,0,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","sd-table",[],["sticky",!0],0,null,["loc",[null,[6,4],[35,17]]]]],locals:[],templates:[e]}}();return{meta:{fragmentReason:{name:"missing-wrapper",problems:["wrong-type","multiple-nodes"]},revision:"Ember@2.2.0-beta.1",loc:{source:null,start:{line:1,column:0},end:{line:37,column:0}},moduleName:"flame-ui/templates/components/transactions-table.hbs"},isEmpty:!1,arity:0,cachedFragment:null,hasRendered:!1,buildFragment:function(e){var t=e.createDocumentFragment(),n=e.createComment("");e.appendChild(t,n);var n=e.createTextNode("\n");e.appendChild(t,n);var n=e.createComment("");return e.appendChild(t,n),t},buildRenderNodes:function(e,t,n){var r=new Array(2);return r[0]=e.createMorphAt(t,0,0,n),r[1]=e.createMorphAt(t,2,2,n),e.insertBoundary(t,0),e.insertBoundary(t,null),r},statements:[["block","sd-panel-header",[],[],0,null,["loc",[null,[1,0],[3,20]]]],["block","sd-panel-content",[],["class","-no-padding -flexbox"],1,null,["loc",[null,[5,0],[36,21]]]]],locals:[],templates:[e,t]}}())}),define("flame-ui/config/environment",["ember"],function(e){var t="flame-ui";try{var n=t+"/config/environment",r=e["default"].$('meta[name="'+n+'"]').attr("content"),a=JSON.parse(unescape(r));return{"default":a}}catch(c){throw new Error('Could not read config from meta tag with name "'+n+'".')}}),runningTests?require("flame-ui/tests/test-helper"):require("flame-ui/app")["default"].create({name:"flame-ui",version:"0.0.0+4098a8a7"});
+"use strict";
+/* jshint ignore:start */
+
+/* jshint ignore:end */
+
+define('flame-ui/app', ['exports', 'ember', 'ember/resolver', 'ember/load-initializers', 'flame-ui/config/environment'], function (exports, Ember, Resolver, loadInitializers, config) {
+
+  'use strict';
+
+  /* global d3 */
+
+  var App;
+
+  Ember['default'].MODEL_FACTORY_INJECTIONS = true;
+
+  App = Ember['default'].Application.extend({
+    modulePrefix: config['default'].modulePrefix,
+    podModulePrefix: config['default'].podModulePrefix,
+    Resolver: Resolver['default']
+  });
+
+  loadInitializers['default'](App, config['default'].modulePrefix);
+
+  //
+  // Patch d3.entries to include only own property and avoid extra properties added by Ember prototypes.
+  //
+  d3.entries = function (map) {
+    var entries = [];
+    for (var key in map) {
+      if (map.hasOwnProperty(key)) {
+        entries.push({ key: key, value: map[key] });
+      }
+    }
+    return entries;
+  };
+
+  exports['default'] = App;
+
+});
+define('flame-ui/components/app-container', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    var get = Ember['default'].get;
+    var set = Ember['default'].set;
+    var setProperties = Ember['default'].setProperties;
+
+    exports['default'] = Ember['default'].Component.extend({
+        transactionStore: Ember['default'].inject.service(),
+
+        classNames: ['sd-app-container'],
+
+        init: function init() {
+            this._super.apply(this, arguments);
+
+            setProperties(this, {
+                transaction: null,
+                aggregation: null,
+                transactionData: null,
+                span: null,
+                spanMode: null,
+                spanLog: null
+            });
+        },
+
+        didInitAttrs: function didInitAttrs() {
+            this.selectTransaction(this.get('transactions')[0].node);
+        },
+
+        chartPanelSize: Ember['default'].computed('span', function () {
+            return this.get('span') ? 'row-2' : 'row-3';
+        }),
+
+        selectTransaction: function selectTransaction(transaction, aggregation) {
+            var me = this;
+            var currentAggregation = aggregation || get(me, 'aggregation') || 'avg';
+
+            if (get(me, 'transaction') !== transaction || get(me, 'aggregation') !== currentAggregation) {
+                setProperties(me, {
+                    transaction: transaction,
+                    aggregation: currentAggregation,
+                    span: null
+                });
+
+                me.get('transactionStore').findTransaction(transaction, currentAggregation).then(function (result) {
+                    setProperties(me, {
+                        transaction: transaction,
+                        aggregation: currentAggregation,
+                        transactionData: result
+                    });
+                });
+            } else {
+                setProperties(me, {
+                    transaction: null,
+                    transactionData: null,
+                    span: null
+                });
+            }
+        },
+
+        actions: {
+            selectTransaction: function selectTransaction(transaction, aggregation) {
+                this.selectTransaction(transaction, aggregation);
+            },
+
+            changeAggregation: function changeAggregation(aggregation) {
+                var me = this;
+                var transaction = this.get('transaction');
+
+                me.get('transactionStore').findTransaction(transaction, aggregation).then(function (result) {
+                    setProperties(me, {
+                        transaction: transaction,
+                        aggregation: aggregation,
+                        transactionData: result
+                    });
+                });
+            },
+
+            selectSpan: function selectSpan(span) {
+                var me = this;
+                var currentMode = get(this, 'spanMode') || 'SPAN';
+
+                if (get(me, 'span') !== span) {
+                    setProperties(me, {
+                        span: span,
+                        spanMode: currentMode
+                    });
+
+                    get(me, 'transactionStore').findSpanLog(span, currentMode).then(function (result) {
+                        setProperties(me, {
+                            span: span,
+                            spanMode: currentMode,
+                            spanLog: result
+                        });
+                    });
+                } else {
+                    setProperties(me, {
+                        span: null,
+                        spanMode: null,
+                        spanLog: null
+                    });
+                }
+            },
+
+            selectSpanMode: function selectSpanMode(mode) {
+                var me = this;
+                var currentSpan = get(this, 'span');
+
+                set(this, 'spanMode', mode);
+
+                get(me, 'transactionStore').findSpanLog(currentSpan, mode).then(function (result) {
+                    setProperties(me, {
+                        span: currentSpan,
+                        spanMode: mode,
+                        spanLog: result
+                    });
+                });
+            }
+        }
+    });
+
+});
+define('flame-ui/components/app-version', ['exports', 'ember-cli-app-version/components/app-version', 'flame-ui/config/environment'], function (exports, AppVersionComponent, config) {
+
+  'use strict';
+
+  var _config$APP = config['default'].APP;
+  var name = _config$APP.name;
+  var version = _config$APP.version;
+
+  exports['default'] = AppVersionComponent['default'].extend({
+    version: version,
+    name: name
+  });
+
+});
+define('flame-ui/components/flame-ui', ['exports', 'ember', 'flame-ui/components/sd-panel', 'flame-ui/helpers/fmt-time-interval', 'flame-ui/lib/flame-graph'], function (exports, Ember, SDPanel, fmtTimeInterval, FlameGraph) {
+
+    'use strict';
+
+    /* global d3 */
+
+    var get = Ember['default'].get;
+    var set = Ember['default'].set;
+    var setProperties = Ember['default'].setProperties;
+
+    exports['default'] = SDPanel['default'].extend({
+        colorStore: Ember['default'].inject.service('color-store'),
+
+        classNames: ['flame-ui'],
+
+        aggregationOptions: Ember['default'].A([{
+            value: 'avg',
+            name: 'Average'
+        }, {
+            value: 'min',
+            name: 'Minimum'
+        }, {
+            value: 'max',
+            name: 'Maximum'
+        }]),
+
+        init: function init() {
+            this._super();
+
+            var me = this;
+            setProperties(me, {
+                activeSpan: null,
+                chart: null,
+                detailMode: 'popout',
+                chartContext: {
+                    detailClose: function detailClose() {
+                        var svPopoutBox = d3.select('#' + me.$().attr('id') + ' #svPopout');
+                        if (get(me, 'detailMode') !== 'zoom') {
+                            svPopoutBox.html('');
+                            svPopoutBox.style('opacity', null);
+                            svPopoutBox.style('z-index', null);
+                        } else {
+                            get(me, 'chart').zoomSet({ 'x': 0, 'dx': 1, 'y': 0 });
+                        }
+                    },
+                    detailOpen: function svDetailOpen(d) {
+                        function svMakeSubgraphData(d) {
+                            /*
+                             * First, construct everything from the current node to all of its
+                             * leafs.
+                             */
+                            var tree, oldtree;
+
+                            tree = {};
+                            tree[d.data.key] = d.data.value;
+
+                            while (d.parent !== undefined) {
+                                oldtree = tree;
+                                tree = {};
+                                tree[d.parent.data.key] = {
+                                    't': d.parent.data.value.t,
+                                    'svTotal': d.parent.data.value.svTotal,
+                                    'ch': oldtree
+                                };
+                                d = d.parent;
+                            }
+
+                            return tree;
+                        }
+
+                        var svPopoutBox = d3.select('#' + me.$().attr('id') + ' #svPopout');
+                        if (get(me, 'detailMode') !== 'zoom') {
+                            svPopoutBox.html('');
+                            new FlameGraph['default'](svPopoutBox, svMakeSubgraphData(d), null, null, get(me, 'chartContext'), {
+                                getNodeColor: me.getNodeColor.bind(me)
+                            });
+                            svPopoutBox.style('z-index', 1);
+                            svPopoutBox.style('opacity', 1);
+                        } else {
+                            get(me, 'chart').zoomSet(d);
+                        }
+                    },
+                    mouseout: function mouseout() {
+                        Ember['default'].run(function () {
+                            set(me, 'activeSpan', null);
+                        });
+                    },
+                    mouseover: function mouseover(d, det) {
+                        Ember['default'].run(function () {
+                            set(me, 'activeSpan', {
+                                name: det.label,
+                                container: d.data.value.cont,
+                                commandLine: d.data.value.exe,
+                                timeTotal: fmtTimeInterval['default'](d.data.value.tt, 3, 1).output,
+                                timeInNode: fmtTimeInterval['default'](d.data.value.t, 3, 1).output,
+                                childCount: d.data.value.nconc
+                            });
+                        });
+                    },
+                    select: function select(d) {
+                        Ember['default'].run(function () {
+                            me.sendAction('select', d);
+                        });
+                    }
+                }
+            });
+        },
+
+        didInsertElement: function didInsertElement() {
+            if (this.attrs.data.value) {
+                this.renderChart(this.attrs.data.value, this.attrs.node.value);
+            }
+        },
+
+        didUpdateAttrs: function didUpdateAttrs(args) {
+            set(this, 'activeSpan', null);
+
+            if (args.newAttrs.data.value !== args.oldAttrs.data.value) {
+                this.destroyChart();
+                if (args.newAttrs.data.value) {
+                    this.renderChart(args.newAttrs.data.value, args.newAttrs.node.value);
+                }
+            }
+        },
+
+        renderChart: function renderChart(data) {
+            set(this, 'chart', new FlameGraph['default'](d3.select('#' + this.$().attr('id') + ' #chart'), data, null, null, get(this, 'chartContext'), {
+                axisLabels: true,
+                getNodeColor: this.getNodeColor.bind(this)
+            }));
+        },
+
+        destroyChart: function destroyChart() {
+            d3.select('#' + this.$().attr('id') + ' #chart').html("");
+        },
+
+        getNodeColor: function getNodeColor(containerName) {
+            return get(this, 'colorStore').assignColor(containerName);
+        },
+
+        containerNameList: Ember['default'].computed('data', function () {
+            function recursion(ch) {
+                var keys = Object.keys(ch);
+                var i, iz;
+                for (i = 0, iz = keys.length; i < iz; i++) {
+                    if (ch[keys[i]].cont && map[ch[keys[i]].cont] === undefined) {
+                        map[ch[keys[i]].cont] = true;
+                        list.push(ch[keys[i]].cont);
+                    }
+
+                    if (ch[keys[i]].cont && ch[keys[i]].ch) {
+                        recursion(ch[keys[i]].ch);
+                    }
+                }
+            }
+
+            var list = [];
+            var map = {};
+
+            if (this.attrs.data.value) {
+                recursion(this.attrs.data.value[''].ch);
+            }
+
+            return list;
+        }),
+
+        legendItems: Ember['default'].computed('containerNameList', function () {
+            return get(this, 'containerNameList').map(function (containerName) {
+                return {
+                    name: containerName,
+                    color: new Ember['default'].Handlebars.SafeString('color: ' + get(this, 'colorStore').assignColor(containerName))
+                };
+            }, this);
+        }),
+
+        actions: {
+            changeAggregation: function changeAggregation(value) {
+                this.sendAction('changeAggregation', value);
+            }
+        }
+    });
+
+});
+define('flame-ui/components/input-toggle', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        tagName: 'label',
+        classNames: ['input-toggle'],
+        input: Ember['default'].$(),
+
+        didInsertElement: function didInsertElement() {
+            this.set('input', this.$('input'));
+        },
+
+        actions: {
+            toggle: function toggle() {
+                var $input = this.get('input');
+
+                if ($input.is(':disabled')) {
+                    return;
+                }
+                this.toggleProperty('checked');
+                $input.trigger('change');
+                //
+                // Need this run next or the action is triggered too early
+                //
+                Ember['default'].run.next(this, function () {
+                    this.sendAction('onChange', this.get('checked'));
+                });
+            }
+        }
+    });
+
+});
+define('flame-ui/components/sd-dropdown-item', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        tagName: 'li',
+        classNameBindings: ['item.hidden:-hidden'],
+
+        selectedOption: null,
+        isSelected: Ember['default'].computed('selectedOption', function () {
+            return this.get('selectedOption') === this.get('item.value');
+        }),
+
+        actions: {
+            selectOption: function selectOption(value) {
+                this.sendAction('selectOption', value);
+            },
+            setDropdownStatus: function setDropdownStatus(status) {
+                this.sendAction('setDropdownStatus', status);
+            }
+        }
+    });
+
+});
+define('flame-ui/components/sd-dropdown-trigger', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        tagName: 'button',
+
+        click: function click() {
+            this.send('toggleDropdown');
+        },
+
+        actions: {
+            toggleDropdown: function toggleDropdown() {
+                this.sendAction('toggleDropdown');
+            }
+        }
+    });
+
+});
+define('flame-ui/components/sd-dropdown', ['exports', 'ember', 'flame-ui/mixins/clickElseWhere'], function (exports, Ember, ClickElseWhereMixin) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend(ClickElseWhereMixin['default'], {
+        classNames: ['sd-dropdown-wrapper'],
+        classNameBindings: ['isDropdownOpen:-open'],
+
+        items: Ember['default'].A(),
+        isDropdownOpen: false,
+        selectedOption: null,
+
+        label: 'Dropdown',
+
+        action: 'select',
+
+        onClickElsewhere: function onClickElsewhere(evt) {
+            var el = Ember['default'].$(evt.target);
+
+            // Exit if the target element is not in the DOM anymore
+            // it means that the clicked element was the "Edit" button of the smartTextbox
+            if (Ember['default'].$(document).find(el).length === 0) return;
+
+            // Check if the clicked element is inside the current smartTextbox, if not, close the edit mode
+            if (this.$() && this.$().has(el).length === 0) {
+                this.send('setDropdownStatus', false);
+            }
+        },
+
+        actions: {
+            // inverts the current status
+            toggleDropdown: function toggleDropdown() {
+                this.toggleProperty('isDropdownOpen');
+            },
+            // false = close, true = open
+            setDropdownStatus: function setDropdownStatus(status) {
+                this.set('isDropdownOpen', status);
+            },
+            // triggered when an option is selected
+            selectOption: function selectOption(value) {
+                // send a custom action to the parent, passing the value of the selected option as parameter
+                this.sendAction(this.get('action'), value);
+                // highlight current option
+                this.set('selectedOption', value);
+                // close the dropdown
+                this.send('setDropdownStatus', false);
+            }
+        }
+    });
+
+});
+define('flame-ui/components/sd-header', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        tagName: 'header',
+        classNames: ['sd-header']
+    });
+
+});
+define('flame-ui/components/sd-panel-content', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        classNames: ['sd-panel-content']
+    });
+
+});
+define('flame-ui/components/sd-panel-footer', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        classNames: ['sd-panel-footer']
+    });
+
+});
+define('flame-ui/components/sd-panel-header', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        classNames: ['sd-panel-header']
+    });
+
+});
+define('flame-ui/components/sd-panel-sidebar', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        classNames: ['sd-panel-sidebar'],
+        classNameBindings: ['collapsed:-collapsed']
+    });
+
+});
+define('flame-ui/components/sd-panel', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    // sd-panel, `sd` stands for Sysdig, it's the basic panel component used in our app
+
+    exports['default'] = Ember['default'].Component.extend({
+        classNames: ['sd-panel']
+    });
+
+});
+define('flame-ui/components/sd-tab-item', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        tagName: 'li',
+        classNames: ['sd-tab-item'],
+        classNameBindings: ['isActive:-active'],
+
+        // Here we store the value of the tab (it works like an HTML select widget)
+        value: null,
+
+        // Register this tab as part of the parent tabs-list, doing so we'll know how many tabs have our list
+        // and we can set the first tab as the default activated
+        setup: Ember['default'].on('didInsertElement', function () {
+            this.send('registerTab');
+        }),
+
+        // Use this property to know if the current tab is the active one
+        isActive: Ember['default'].computed('activeTab', function () {
+            return this.get('activeTab') === this.get('value');
+        }),
+
+        // Clicking on this tab will activate it
+        click: function click() {
+            this.send('activateTab');
+        },
+
+        actions: {
+            registerTab: function registerTab() {
+                this.sendAction('registerTab', this.get('value'));
+            },
+            activateTab: function activateTab() {
+                this.sendAction('activateTab', this.get('value'));
+            }
+        }
+    });
+
+});
+define('flame-ui/components/sd-table', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        classNames: ['sd-table', 'table-container'],
+        attributeBindings: ['eqPts:data-eq-pts'],
+
+        // Set sticky to true when your table needs a sticky_on_top header
+        // remember to wrap your `th` content inside a `div.th-inner` and make sure the table is direct child of a flexbox
+        sticky: false,
+        hasStickHeader: Ember['default'].computed.oneWay('sticky'),
+
+        // We apply this dummy property just to enable eq.js on this component and take advantage of the `eqResize` event
+        eqPts: 'x:0',
+
+        setupThead: Ember['default'].on('didInsertElement', function () {
+            this.updateThead(this.$('.thead'));
+            this.$().on('eqResize', (function () {
+                this.updateThead(this.$('.thead'));
+            }).bind(this));
+        }),
+        updateThead: function updateThead($thead) {
+            $thead.find('th').each((function (index, th) {
+                var $th = this.$(th);
+                var thInner = $th.find('.th-inner')[0];
+                var width = $th.width();
+                var paddingLeft = thInner ? window.getComputedStyle(thInner).getPropertyValue('padding-left').slice(0, -2) : 0;
+                var paddingRight = thInner ? window.getComputedStyle(thInner).getPropertyValue('padding-right').slice(0, -2) : 0;
+                $th.find('.th-inner').width(width - paddingLeft - paddingRight); // TODO: get rid of the `- 20`
+            }).bind(this));
+        }
+    });
+
+});
+define('flame-ui/components/sd-tabs-list', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Component.extend({
+        tagName: 'ul',
+        classNames: ['sd-tabs-list'],
+
+        // This is the list of tabs' IDs contained in this tabs-list
+        // everytime a new tabs-list is initialized, we set it as empty array
+        tabs: null,
+        init: function init() {
+            this._super();
+            this.set('tabs', Ember['default'].A([]));
+        },
+
+        // By default, set as active tab the first one
+        // this prop will then be overrided when a different one is activated
+        activeTab: Ember['default'].computed('tabs.[]', function () {
+            return this.get('tabs.0');
+        }),
+
+        actions: {
+            registerTab: function registerTab(tab) {
+                this.get('tabs').pushObject(tab);
+            },
+            activateTab: function activateTab(tab) {
+                this.set('activeTab', tab);
+            }
+        }
+    });
+
+});
+define('flame-ui/components/span-log', ['exports', 'ember', 'flame-ui/components/sd-panel'], function (exports, Ember, SDPanel) {
+
+    'use strict';
+
+    exports['default'] = SDPanel['default'].extend({
+        classNames: ['span-log'],
+
+        lines: Ember['default'].computed('log', function () {
+            var log = this.get('log');
+            if (!log) return;
+            return this.get('log').map(function (line) {
+                return Ember['default'].$.extend(line, {
+                    color: new Ember['default'].Handlebars.SafeString('color: ' + line.col),
+                    lineColor: new Ember['default'].Handlebars.SafeString('color: ' + line.contCol)
+                });
+            });
+        }),
+
+        actions: {
+            selectMode: function selectMode(mode) {
+                this.sendAction('selectMode', mode);
+            }
+        }
+    });
+
+});
+define('flame-ui/components/transactions-table', ['exports', 'flame-ui/components/sd-panel'], function (exports, SPanel) {
+
+    'use strict';
+
+    exports['default'] = SPanel['default'].extend({
+        classNames: ['transactions-table'],
+
+        actions: {
+            select: function select(node, view) {
+                this.sendAction('select', node, view);
+            }
+        }
+    });
+
+});
+define('flame-ui/controllers/array', ['exports', 'ember'], function (exports, Ember) {
+
+	'use strict';
+
+	exports['default'] = Ember['default'].Controller;
+
+});
+define('flame-ui/controllers/object', ['exports', 'ember'], function (exports, Ember) {
+
+	'use strict';
+
+	exports['default'] = Ember['default'].Controller;
+
+});
+define('flame-ui/helpers/fmt-time-interval', ['exports'], function (exports) {
+
+    'use strict';
+
+    //
+    // convert a nanosecond time interval into a s.ns representation.
+    // 1100000000 becomes 1.1s
+    //
+    exports['default'] = function (value, decimals, step) {
+        decimals = decimals === undefined ? 2 : decimals;
+        step = step === undefined ? 2 : step;
+
+        var units = ['ns', 'us', 'ms', 's', 'min', 'h', 'd'];
+        var absValue = Math.abs(value);
+        var multipliers = [1000, 1000, 1000, 60, 60, 24];
+        var multiplier = 1;
+        var i;
+        for (i = 0; i < units.length; i++) {
+            if (absValue < multiplier * step * multipliers[i]) {
+                break;
+            } else if (i < units.length - 1) {
+                multiplier = multiplier * multipliers[i];
+            }
+        }
+        i = i < units.length ? i : units.length - 1;
+
+        var convertedValue = (value / multiplier).toFixed(decimals);
+        var unit = units[i];
+
+        return {
+            value: convertedValue,
+            unit: unit,
+            output: convertedValue + ' ' + unit
+        };
+    }
+
+});
+define('flame-ui/helpers/fmtTimeInterval', ['exports'], function (exports) {
+
+    'use strict';
+
+    //
+    // convert a nanosecond time interval into a s.ns representation.
+    // 1100000000 becomes 1.1s
+    //
+    exports['default'] = function (value, decimals, step) {
+        decimals = decimals === undefined ? 2 : decimals;
+        step = step === undefined ? 2 : step;
+
+        var units = ['ns', 'us', 'ms', 's', 'min', 'h', 'd'];
+        var absValue = Math.abs(value);
+        var multipliers = [1000, 1000, 1000, 60, 60, 24];
+        var multiplier = 1;
+        var i;
+        for (i = 0; i < units.length; i++) {
+            if (absValue < multiplier * step * multipliers[i]) {
+                break;
+            } else if (i < units.length - 1) {
+                multiplier = multiplier * multipliers[i];
+            }
+        }
+        i = i < units.length ? i : units.length - 1;
+
+        var convertedValue = (value / multiplier).toFixed(decimals);
+        var unit = units[i];
+
+        return {
+            value: convertedValue,
+            unit: unit,
+            output: convertedValue + ' ' + unit
+        };
+    }
+
+});
+define('flame-ui/helpers/is-equal', ['exports', 'ember'], function (exports, Ember) {
+
+  'use strict';
+
+  exports['default'] = Ember['default'].Helper.extend({
+    compute: function compute(params, hash) {
+      return hash.a === hash.b;
+    }
+  });
+
+});
+define('flame-ui/initializers/app-version', ['exports', 'ember-cli-app-version/initializer-factory', 'flame-ui/config/environment'], function (exports, initializerFactory, config) {
+
+  'use strict';
+
+  var _config$APP = config['default'].APP;
+  var name = _config$APP.name;
+  var version = _config$APP.version;
+
+  exports['default'] = {
+    name: 'App Version',
+    initialize: initializerFactory['default'](name, version)
+  };
+
+});
+define('flame-ui/initializers/export-application-global', ['exports', 'ember', 'flame-ui/config/environment'], function (exports, Ember, config) {
+
+  'use strict';
+
+  exports.initialize = initialize;
+
+  function initialize() {
+    var application = arguments[1] || arguments[0];
+    if (config['default'].exportApplicationGlobal !== false) {
+      var theGlobal;
+      if (typeof window !== 'undefined') {
+        theGlobal = window;
+      } else if (typeof global !== 'undefined') {
+        theGlobal = global;
+      } else if (typeof self !== 'undefined') {
+        theGlobal = self;
+      } else {
+        // no reasonable global, just bail
+        return;
+      }
+
+      var value = config['default'].exportApplicationGlobal;
+      var globalName;
+
+      if (typeof value === 'string') {
+        globalName = value;
+      } else {
+        globalName = Ember['default'].String.classify(config['default'].modulePrefix);
+      }
+
+      if (!theGlobal[globalName]) {
+        theGlobal[globalName] = application;
+
+        application.reopen({
+          willDestroy: function willDestroy() {
+            this._super.apply(this, arguments);
+            delete theGlobal[globalName];
+          }
+        });
+      }
+    }
+  }
+
+  exports['default'] = {
+    name: 'export-application-global',
+
+    initialize: initialize
+  };
+
+});
+define('flame-ui/lib/flame-graph', ['exports'], function (exports) {
+
+    'use strict';
+
+    /* global d3 */
+
+    /*
+     * Input: "d", a D3 node from the layout, typically resembling:
+     *     parent: ...,  // parent D3 node
+     *     data: {
+     *         key: ..., // function name
+     *         value: {
+     *             svTotal: ...,
+     *             t: ...,
+     *             ch: ...
+     *         }
+     *     }
+     * Output: an object describing the raw flame graph data, matching the form:
+     *     "": {
+     *         svTotal: ...
+     *         t: ...
+     *         ch: {
+     *             key1: { // function name
+     *                 svTotal: ...
+     *                 t: ...
+     *                 ch: ...
+     *             },
+     *             ...
+     *         }
+     *     }
+     */
+
+    /* Configuration */
+    // var svSvgWidth = null;      /* image width (null to auto-compute) */
+    // var svSvgHeight = null;     /* image height (null to auto-compute) */
+    var svAxisLabelWidth = 45; /* width of axis labels */
+    // var svChartWidth = null;    /* width of chart part of image */
+    // var svChartHeight = null;   /* height of chart part of image */
+    var svGrowDown = false; /* if true, stacks are drawn growing down */
+    var svTransitionTime = 2000; /* time for transition */
+    var svCornerPixels = 2; /* radius of rounded corners */
+    var svTextPaddingLeft = 5; /* padding-left on rectangle labels */
+    var svTextPaddingRight = 10; /* pading-right on rectangle labels */
+    var svTextPaddingTop = '1.0em'; /* padding-top on rectangle labels */
+    var svColorMode = 'mono'; /* coloring mode */
+    // var svDetailMode = 'popout';    /* detail display mode ("zoom" or "popout") */
+
+    /*
+     * Build a flame graph rooted at the given "node" (a D3 selection) with the
+     * given "rawdata" tree.  The graph will have size defined by "pwidth" and
+     * "pheight".  "context" is used for notifications about UI actions.
+     */
+    function FlameGraph(node, rawdata, pwidth, pheight, context, options) {
+        function svCreateBarLabel(d) {
+            var nconc = d.data.value.nconc;
+
+            if (nconc) {
+                return d.data.key + ' (' + nconc + ')';
+            } else {
+                return d.data.key;
+            }
+        }
+
+        var axiswidth, chartheight, rect, scale, nodeid, axis, data;
+        var fg = this;
+
+        this.fg_context = context;
+        this.fg_maxdepth = 0;
+        this.fg_maxunique = 0;
+        this.fg_depthsamples = [];
+        this.computeDepth(rawdata, 0);
+
+        options.coloring = options.coloring || svColorMode;
+        if (options.hasOwnProperty('growDown') === false) {
+            options.growDown = svGrowDown;
+        }
+
+        if (options.axisLabels) {
+            axiswidth = this.fg_axiswidth = svAxisLabelWidth;
+        } else {
+            axiswidth = this.fg_axiswidth = 0;
+        }
+
+        this.fg_svgwidth = pwidth !== null ? pwidth : parseInt(node.style('width'), 10);
+        this.fg_svgheight = pheight !== null ? pheight : 25 * this.fg_maxdepth;
+        this.fg_chartwidth = this.fg_svgwidth - axiswidth;
+        chartheight = this.fg_chartheight = this.fg_svgheight - axiswidth;
+
+        this.fg_xscale = d3.scale.linear().range([0, this.fg_chartwidth]);
+        this.fg_yscale = d3.scale.linear().range([0, this.fg_chartheight]);
+
+        this.fg_svg = node.append('svg:svg');
+        this.fg_svg.attr('width', this.fg_svgwidth);
+        this.fg_svg.attr('height', this.fg_svgheight);
+
+        /* Create a background rectangle that resets the view when clicked. */
+        rect = this.fg_svg.append('svg:rect');
+        rect.attr('class', 'svBackground');
+        rect.attr('width', this.fg_svgwidth);
+        rect.attr('height', this.fg_svgheight);
+        rect.attr('fill', '#ffffff');
+        rect.on('click', this.detailClose.bind(this));
+        rect.on('dblclick', this.detailClose.bind(this));
+
+        /* Configure the partition layout. */
+        this.fg_part = d3.layout.partition();
+        this.fg_part.children(function (d) {
+            return d3.entries(d.value.ch);
+        });
+        this.fg_part.value(function (d) {
+            return d.value.svTotal;
+        });
+        this.fg_part.sort(function (d1, d2) {
+            return d1.data.key.localeCompare(d2.data.key);
+        });
+
+        /* Configure the color function. */
+        if (options.coloring === 'random') {
+            scale = d3.scale.category20c();
+            this.fg_color = function (d) {
+                return scale(d.data.key);
+            };
+        } else {
+            this.fg_color = function (d) {
+                if (d.data.value.svSynthetic) {
+                    return '#ffffff';
+                }
+
+                return options.getNodeColor(d.data.value.cont);
+            };
+        }
+
+        /* Configure the actual D3 components. */
+        nodeid = this.fg_nodeid = function (d) {
+            return encodeURIComponent([d.data.key, fg.fg_yscale(d.y), fg.fg_xscale(d.x)].join('@'));
+        };
+        this.fg_rectwidth = function (d) {
+            return fg.fg_xscale(d.dx);
+        };
+        this.fg_height = function (d) {
+            return fg.fg_yscale(d.dy);
+        };
+        this.fg_textwidth = function (d) {
+            return Math.max(0, fg.fg_rectwidth(d) - svTextPaddingRight);
+        };
+        this.fg_x = function (d) {
+            return fg.fg_xscale(d.x) + fg.fg_axiswidth;
+        };
+
+        if (options.growDown) {
+            this.fg_y = function (d) {
+                return fg.fg_yscale(d.y);
+            };
+        } else {
+            this.fg_y = function (d) {
+                return chartheight - fg.fg_yscale(d.y);
+            };
+        }
+
+        data = this.fg_part(d3.entries(rawdata)[0]);
+        this.fg_rects = this.fg_svg.selectAll('rect').data(data).enter().append('svg:rect').attr('class', function (d) {
+            return d.data.value.svSynthetic ? 'svBoxSynthetic' : 'svBox';
+        }).attr('x', this.fg_x).attr('y', this.fg_y).attr('rx', svCornerPixels).attr('ry', svCornerPixels).attr('height', this.fg_height).attr('width', this.fg_rectwidth).attr('fill', this.fg_color).on('click', context.select.bind(this)).on('dblclick', this.detailOpen.bind(this)).on('mouseover', this.mouseover.bind(this)).on('mouseout', this.mouseout.bind(this));
+        this.fg_clips = this.fg_svg.selectAll('clipPath').data(data).enter().append('svg:clipPath').attr('id', nodeid).append('svg:rect').attr('x', this.fg_x).attr('y', this.fg_y).attr('width', this.fg_textwidth).attr('height', this.fg_height);
+        this.fg_text = this.fg_svg.selectAll('text').data(data).enter().append('text').attr('class', 'svBoxLabel').attr('x', this.fg_x).attr('y', this.fg_y).attr('dx', svTextPaddingLeft).attr('dy', svTextPaddingTop). // 12
+        attr('clip-path', function (d) {
+            return 'url("#' + nodeid(d) + '")';
+        }).on('click', context.select.bind(this)).on('dblclick', this.detailOpen.bind(this)).on('mouseover', this.mouseover.bind(this)).on('mouseout', this.mouseout.bind(this)).text(function (d) {
+            return svCreateBarLabel(d);
+        });
+
+        if (options.axisLabels) {
+            axis = this.fg_svg.append('text');
+            axis.attr('class', 'svYAxisLabel');
+            axis.attr('x', -this.fg_svgheight);
+            axis.attr('dx', '8em');
+            axis.attr('y', '30px');
+            axis.attr('transform', 'rotate(-90)');
+            axis.text('Tiers');
+
+            axis = this.fg_svg.append('text');
+            axis.attr('class', 'svYAxisLabel');
+            axis.attr('x', '30px');
+            axis.attr('dx', '8em');
+            /*
+             * Magic constants here:
+             *   30 is the height of the label (since we're specifying the
+             *   top coordinate), and 25 is the height of each block
+             *   (because there's an invisible row we want to cover up).
+             */
+            axis.attr('y', this.fg_svgheight - 30 - 25);
+            axis.attr('width', this.fg_svgwidth - 30);
+            //      axis.text('Percentage of Samples');
+        }
+    }
+
+    FlameGraph.prototype.computeDepth = function (tree, depth) {
+        var key, rem;
+
+        if (depth > this.fg_maxdepth) {
+            this.fg_maxdepth = depth;
+        }
+
+        if (depth >= this.fg_depthsamples.length) {
+            this.fg_depthsamples[depth] = 0;
+        }
+
+        for (key in tree) {
+            if (tree[key].t > this.fg_maxunique) {
+                this.fg_maxunique = tree[key].t;
+            }
+            this.fg_depthsamples[depth] += tree[key].svTotal;
+            this.computeDepth(tree[key].ch, depth + 1);
+
+            rem = tree[key].t;
+            if (rem > 0 && tree[key].ch[''] === undefined) {
+                tree[key].ch[''] = {
+                    'svSynthetic': true,
+                    't': rem,
+                    'svTotal': rem,
+                    'ch': {}
+                };
+            }
+        }
+    };
+
+    FlameGraph.prototype.detailClose = function () {
+        if (this.fg_context !== null) {
+            this.fg_context.detailClose();
+        }
+    };
+
+    FlameGraph.prototype.detailOpen = function (d) {
+        if (!d.data.value.svSynthetic && this.fg_context !== null) {
+            this.fg_context.detailOpen(d);
+        }
+    };
+
+    FlameGraph.prototype.mouseover = function (d) {
+        if (d.data.value.svSynthetic || this.fg_context === null) {
+            return;
+        }
+
+        var nsamples, nunique;
+        var pctSamples, pctUnique;
+        var detail;
+        var fg = this;
+
+        nsamples = d.data.value.svTotal;
+        pctSamples = (100 * nsamples / this.fg_depthsamples[0]).toFixed(1);
+
+        nunique = d.data.value.t;
+        pctUnique = (100 * nunique / this.fg_depthsamples[0]).toFixed(1);
+
+        detail = {
+            'label': d.data.key,
+            'nsamples': d.data.value.svTotal,
+            'nunique': d.data.value.t,
+            'nallsamples': this.fg_depthsamples[0],
+            'pctSamples': pctSamples,
+            'pctUnique': pctUnique,
+            'x': d3.event.pageX,
+            'y': d3.event.pageY
+        };
+
+        this.fg_hoverto = setTimeout(function () {
+            fg.fg_hoverto = null;
+            fg.fg_context.mouseover(d, detail);
+        }, 50);
+    };
+
+    FlameGraph.prototype.mouseout = function (d) {
+        if (this.fg_hoverto) {
+            clearTimeout(this.fg_hoverto);
+        }
+        if (this.fg_context !== null) {
+            this.fg_context.mouseout(d);
+        }
+    };
+
+    FlameGraph.prototype.zoomSet = function (cd) {
+        var fg = this;
+
+        this.fg_xscale.domain([cd.x, cd.x + cd.dx]);
+        this.fg_rectwidth = function (d) {
+            return fg.fg_xscale(d.x + d.dx) - fg.fg_xscale(d.x);
+        };
+        this.fg_textwidth = function (d) {
+            return Math.max(0, fg.fg_xscale(d.x + d.dx) - fg.fg_xscale(d.x) - svTextPaddingRight);
+        };
+        this.fg_rects.transition().duration(svTransitionTime).attr('x', this.fg_x).attr('width', this.fg_rectwidth);
+        this.fg_clips.transition().duration(svTransitionTime).attr('x', this.fg_x).attr('width', this.fg_textwidth);
+        this.fg_text.transition().duration(svTransitionTime).attr('x', this.fg_x);
+    };
+
+    exports['default'] = FlameGraph;
+
+});
+define('flame-ui/mixins/clickElseWhere', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Mixin.create({
+        // By default, automatically initialize the event
+        autoInitClickElsewhere: true,
+
+        // Your custom function
+        onClickElsewhere: Ember['default'].K,
+
+        onClickElsewhereBound: null,
+
+        // Set an event that will be fired when user clicks outside of the component/view
+        setupClickElsewhereListener: function setupClickElsewhereListener() {
+            this.set('onClickElsewhereBound', this.get('onClickElsewhere').bind(this));
+            Ember['default'].$(document).on('mouseup', this.get('onClickElsewhereBound'));
+            //Ember.$(document).on('mouseup', function() { console.log('a'); });
+        },
+
+        // Clean the previously defined event to keep events stack clean
+        removeClickElsewhereListener: function removeClickElsewhereListener() {
+            Ember['default'].$(document).off('moseup', this.get('onClickElsewhereBound'));
+
+            // We can set the prop to null only if the object still exists
+            if (this.isDetroyed || this.isDestroying) return;
+            this.set('onClickElsewhereBound', null);
+        },
+
+        // Setup listener on didInsertElement
+        setupClickElsewhereListenerOnLoad: Ember['default'].on('didInsertElement', function () {
+            this.notifyPropertyChange('isClickElsewhereEnabled');
+            if (this.get('autoInitClickElsewhere') === false) return;
+            this.setupClickElsewhereListener();
+        }),
+
+        // Remove listener on willDestroyElement
+        removeClickElsewhereListenerOnDestroy: Ember['default'].on('willDestroyElement', function () {
+            if (this.get('autoInitClickElsewhere') === false) return;
+            this.removeClickElsewhereListener();
+        })
+    });
+
+});
+define('flame-ui/router', ['exports', 'ember', 'flame-ui/config/environment'], function (exports, Ember, config) {
+
+    'use strict';
+
+    var Router = Ember['default'].Router.extend({
+        location: config['default'].locationType
+    });
+
+    Router.map(function () {});
+
+    exports['default'] = Router;
+
+});
+define('flame-ui/routes/application', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Route.extend({
+        transactionStore: Ember['default'].inject.service(),
+
+        model: function model() {
+            return this.get('transactionStore').findAll();
+        }
+    });
+
+});
+define('flame-ui/services/color-store', ['exports', 'ember'], function (exports, Ember) {
+
+    'use strict';
+
+    /* global d3 */
+
+    exports['default'] = Ember['default'].Service.extend({
+        init: function init() {
+            this._super.apply(this, arguments);
+
+            this.setProperties({
+                colors: d3.scale.category10(),
+                lastColorIndex: 0,
+                containerNames: {},
+                containerNameList: []
+            });
+        },
+
+        assignColor: function assignColor(containerName) {
+            var containerNames = this.get('containerNames');
+            var color = containerNames[containerName];
+            if (color === undefined) {
+                color = this.get('colors')(this.get('lastColorIndex'));
+                containerNames[containerName] = color;
+                this.get('containerNameList').pushObject(containerName);
+                this.incrementProperty('lastColorIndex');
+            }
+
+            return color;
+        }
+    });
+
+});
+define('flame-ui/services/transaction-store', ['exports', 'ember', 'flame-ui/helpers/fmtTimeInterval'], function (exports, Ember, fmtTimeInterval) {
+
+    'use strict';
+
+    exports['default'] = Ember['default'].Service.extend({
+        colorStore: Ember['default'].inject.service('color-store'),
+
+        findAll: function findAll() {
+            return new Ember['default'].RSVP.Promise(function (resolve) {
+                Ember['default'].run.next(function () {
+                    var data = {
+                        avg: svFillData(window.transitions.avg),
+                        min: svFillData(window.transitions.min),
+                        max: svFillData(window.transitions.max)
+                    };
+                    var nodeIds = Object.keys(data.avg[''].ch);
+
+                    var transactions = nodeIds.map(function (node) {
+                        return {
+                            node: node,
+                            n: data.avg[""].ch[node].n,
+                            avg: fmtTimeInterval['default'](data.avg[""].ch[node].tt, 3, 1).output,
+                            min: fmtTimeInterval['default'](data.min[""].ch[node].tt, 3, 1).output,
+                            max: fmtTimeInterval['default'](data.max[""].ch[node].tt, 3, 1).output
+                        };
+                    });
+
+                    resolve(transactions);
+                });
+            });
+        },
+
+        findTransaction: function findTransaction(transaction, aggregation) {
+            return new Ember['default'].RSVP.Promise(function (resolve) {
+                Ember['default'].run.next(function () {
+                    var data;
+                    switch (aggregation) {
+                        case 'avg':
+                            data = svFillData(window.transitions.avg);
+                            break;
+                        case 'min':
+                            data = svFillData(window.transitions.min);
+                            break;
+                        case 'max':
+                            data = svFillData(window.transitions.max);
+                            break;
+                    }
+
+                    resolve(createSubTree(data, transaction));
+                });
+            });
+        },
+
+        findSpanLog: function findSpanLog(span, spanMode) {
+            var colorStore = this.get('colorStore');
+
+            return new Ember['default'].RSVP.Promise(function (resolve) {
+                Ember['default'].run.next(function () {
+                    function svAddChildLogs(loglist, dk, dv, retnow) {
+                        if (dv.logs !== undefined) {
+                            for (var j = 0; j < dv.logs.length; j++) {
+                                dv.logs[j].k = dk;
+                                dv.logs[j].d = dv;
+                            }
+
+                            Array.prototype.push.apply(loglist, dv.logs);
+                        }
+
+                        if (retnow === true) {
+                            return;
+                        }
+
+                        var childs = dv.ch;
+                        for (var ch in childs) {
+                            svAddChildLogs(loglist, ch, childs[ch]);
+                        }
+                    }
+
+                    var loglist = [];
+
+                    if (spanMode === 'SPAN') {
+                        svAddChildLogs(loglist, span.data.key, span.data.value, true);
+                    } else {
+                        svAddChildLogs(loglist, span.data.key, span.data.value);
+                        loglist.sort(function (a, b) {
+                            if (a.th === b.th) {
+                                return a.tl - b.tl;
+                            } else {
+                                return a.th - b.th;
+                            }
+                        });
+                    }
+
+                    var lines = [];
+                    for (var j = 0; j < loglist.length; j++) {
+                        var logLine = loglist[j].b.toLowerCase();
+                        var col;
+
+                        //
+                        // Determine the log text color
+                        //
+                        if (logLine.indexOf("err") > -1) {
+                            col = '#ff0000';
+                        } else if (logLine.indexOf("warn") > -1) {
+                            col = '#ff8800';
+                        } else {
+                            col = '#000000';
+                        }
+
+                        //
+                        // Determine the container color
+                        //
+                        var containerName = loglist[j].d.cont;
+
+                        var contCol = colorStore.assignColor(containerName);
+
+                        lines[j] = {
+                            contCol: contCol,
+                            containerName: containerName,
+                            col: col,
+                            k: loglist[j].k,
+                            t: loglist[j].t,
+                            b: loglist[j].b
+                        };
+                    }
+
+                    resolve(lines);
+                });
+            });
+        }
+    });
+
+    function createSubTree(fullTree, trName) {
+        var res = {};
+        res[""] = {};
+        res[""].ch = {};
+        res[""].ch[trName] = fullTree[""].ch[trName];
+
+        return res;
+    }
+
+    function svFillData(tree) {
+        var key, rem;
+
+        for (key in tree) {
+            svFillData(tree[key].ch);
+
+            rem = tree[key].t;
+            if (rem > 0) {
+                tree[key].ch[''] = {
+                    'svSynthetic': true,
+                    't': rem,
+                    'svTotal': rem,
+                    'ch': {}
+                };
+            }
+        }
+
+        return tree;
+    }
+
+});
+define('flame-ui/templates/application', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 1,
+            "column": 38
+          }
+        },
+        "moduleName": "flame-ui/templates/application.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        dom.insertBoundary(fragment, null);
+        return morphs;
+      },
+      statements: [
+        ["inline","app-container",[],["transactions",["subexpr","@mut",[["get","model",["loc",[null,[1,31],[1,36]]]]],[],[]]],["loc",[null,[1,0],[1,38]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/app-container', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    var child0 = (function() {
+      var child0 = (function() {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.2.0-beta.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 20,
+                "column": 4
+              },
+              "end": {
+                "line": 28,
+                "column": 4
+              }
+            },
+            "moduleName": "flame-ui/templates/components/app-container.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("        ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createComment("");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var morphs = new Array(1);
+            morphs[0] = dom.createMorphAt(fragment,1,1,contextualElement);
+            return morphs;
+          },
+          statements: [
+            ["inline","span-log",[],["span",["subexpr","@mut",[["get","span",["loc",[null,[22,26],[22,30]]]]],[],[]],"spanMode",["subexpr","@mut",[["get","spanMode",["loc",[null,[23,26],[23,34]]]]],[],[]],"log",["subexpr","@mut",[["get","spanLog",["loc",[null,[24,26],[24,33]]]]],[],[]],"selectMode","selectSpanMode","class","row-1"],["loc",[null,[21,8],[27,10]]]]
+          ],
+          locals: [],
+          templates: []
+        };
+      }());
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 10,
+              "column": 0
+            },
+            "end": {
+              "line": 29,
+              "column": 0
+            }
+          },
+          "moduleName": "flame-ui/templates/components/app-container.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("    ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n\n");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(2);
+          morphs[0] = dom.createMorphAt(fragment,1,1,contextualElement);
+          morphs[1] = dom.createMorphAt(fragment,3,3,contextualElement);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [
+          ["inline","flame-ui",[],["node",["subexpr","@mut",[["get","transaction",["loc",[null,[12,18],[12,29]]]]],[],[]],"op",["subexpr","@mut",[["get","aggregation",["loc",[null,[13,18],[13,29]]]]],[],[]],"data",["subexpr","@mut",[["get","transactionData",["loc",[null,[14,18],[14,33]]]]],[],[]],"select","selectSpan","class",["subexpr","@mut",[["get","chartPanelSize",["loc",[null,[16,18],[16,32]]]]],[],[]],"changeAggregation","changeAggregation"],["loc",[null,[11,4],[18,6]]]],
+          ["block","if",[["get","span",["loc",[null,[20,10],[20,14]]]]],[],0,null,["loc",[null,[20,4],[28,11]]]]
+        ],
+        locals: [],
+        templates: [child0]
+      };
+    }());
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type",
+            "multiple-nodes"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 30,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/app-container.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n\n");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n\n");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(3);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        morphs[1] = dom.createMorphAt(fragment,2,2,contextualElement);
+        morphs[2] = dom.createMorphAt(fragment,4,4,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        dom.insertBoundary(fragment, null);
+        return morphs;
+      },
+      statements: [
+        ["inline","sd-header",[],["class","-fixed"],["loc",[null,[1,0],[1,28]]]],
+        ["inline","transactions-table",[],["transactions",["subexpr","@mut",[["get","transactions",["loc",[null,[4,19],[4,31]]]]],[],[]],"selected",["subexpr","@mut",[["get","transaction",["loc",[null,[5,19],[5,30]]]]],[],[]],"select","selectTransaction","class","row-1"],["loc",[null,[3,0],[8,2]]]],
+        ["block","if",[["get","transaction",["loc",[null,[10,6],[10,17]]]]],[],0,null,["loc",[null,[10,0],[29,7]]]]
+      ],
+      locals: [],
+      templates: [child0]
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/flame-ui', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    var child0 = (function() {
+      var child0 = (function() {
+        var child0 = (function() {
+          var child0 = (function() {
+            return {
+              meta: {
+                "fragmentReason": false,
+                "revision": "Ember@2.2.0-beta.1",
+                "loc": {
+                  "source": null,
+                  "start": {
+                    "line": 11,
+                    "column": 20
+                  },
+                  "end": {
+                    "line": 13,
+                    "column": 20
+                  }
+                },
+                "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+              },
+              isEmpty: false,
+              arity: 0,
+              cachedFragment: null,
+              hasRendered: false,
+              buildFragment: function buildFragment(dom) {
+                var el0 = dom.createDocumentFragment();
+                var el1 = dom.createTextNode("                        ");
+                dom.appendChild(el0, el1);
+                var el1 = dom.createElement("button");
+                var el2 = dom.createComment("");
+                dom.appendChild(el1, el2);
+                dom.appendChild(el0, el1);
+                var el1 = dom.createTextNode("\n");
+                dom.appendChild(el0, el1);
+                return el0;
+              },
+              buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+                var element2 = dom.childAt(fragment, [1]);
+                var morphs = new Array(2);
+                morphs[0] = dom.createElementMorph(element2);
+                morphs[1] = dom.createMorphAt(element2,0,0);
+                return morphs;
+              },
+              statements: [
+                ["element","action",["changeAggregation",["get","option.value",["loc",[null,[12,61],[12,73]]]]],[],["loc",[null,[12,32],[12,75]]]],
+                ["content","option.name",["loc",[null,[12,76],[12,91]]]]
+              ],
+              locals: [],
+              templates: []
+            };
+          }());
+          return {
+            meta: {
+              "fragmentReason": false,
+              "revision": "Ember@2.2.0-beta.1",
+              "loc": {
+                "source": null,
+                "start": {
+                  "line": 10,
+                  "column": 16
+                },
+                "end": {
+                  "line": 14,
+                  "column": 16
+                }
+              },
+              "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+            },
+            isEmpty: false,
+            arity: 1,
+            cachedFragment: null,
+            hasRendered: false,
+            buildFragment: function buildFragment(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createComment("");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+              var morphs = new Array(1);
+              morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+              dom.insertBoundary(fragment, 0);
+              dom.insertBoundary(fragment, null);
+              return morphs;
+            },
+            statements: [
+              ["block","sd-tab-item",[],["value",["subexpr","@mut",[["get","option.value",["loc",[null,[11,41],[11,53]]]]],[],[]],"activeTab",["subexpr","@mut",[["get","list.activeTab",["loc",[null,[11,64],[11,78]]]]],[],[]],"activateTab","activateTab","registerTab","registerTab","targetObject",["subexpr","@mut",[["get","list",["loc",[null,[11,144],[11,148]]]]],[],[]]],0,null,["loc",[null,[11,20],[13,36]]]]
+            ],
+            locals: ["option"],
+            templates: [child0]
+          };
+        }());
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.2.0-beta.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 9,
+                "column": 12
+              },
+              "end": {
+                "line": 15,
+                "column": 12
+              }
+            },
+            "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+          },
+          isEmpty: false,
+          arity: 1,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createComment("");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var morphs = new Array(1);
+            morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+            dom.insertBoundary(fragment, 0);
+            dom.insertBoundary(fragment, null);
+            return morphs;
+          },
+          statements: [
+            ["block","each",[["get","aggregationOptions",["loc",[null,[10,24],[10,42]]]]],[],0,null,["loc",[null,[10,16],[14,25]]]]
+          ],
+          locals: ["list"],
+          templates: [child0]
+        };
+      }());
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 2,
+              "column": 4
+            },
+            "end": {
+              "line": 17,
+              "column": 4
+            }
+          },
+          "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("        ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("h1");
+          dom.setAttribute(el1,"class","title");
+          var el2 = dom.createComment("");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n\n        ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("div");
+          dom.setAttribute(el1,"class","spacer");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n\n        ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("span");
+          dom.setAttribute(el1,"class","text");
+          var el2 = dom.createTextNode("\n            Aggregate by\n");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createComment("");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createTextNode("        ");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(2);
+          morphs[0] = dom.createMorphAt(dom.childAt(fragment, [1]),0,0);
+          morphs[1] = dom.createMorphAt(dom.childAt(fragment, [5]),1,1);
+          return morphs;
+        },
+        statements: [
+          ["content","node",["loc",[null,[3,26],[3,34]]]],
+          ["block","sd-tabs-list",[],["activeTab",["subexpr","@mut",[["get","op",["loc",[null,[9,38],[9,40]]]]],[],[]]],0,null,["loc",[null,[9,12],[15,29]]]]
+        ],
+        locals: [],
+        templates: [child0]
+      };
+    }());
+    var child1 = (function() {
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 20,
+              "column": 8
+            },
+            "end": {
+              "line": 25,
+              "column": 8
+            }
+          },
+          "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("            ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("div");
+          dom.setAttribute(el1,"id","chart");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n            ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("div");
+          dom.setAttribute(el1,"style","position: relative");
+          var el2 = dom.createTextNode("\n                ");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createElement("div");
+          dom.setAttribute(el2,"id","svPopout");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createTextNode("\n            ");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes() { return []; },
+        statements: [
+
+        ],
+        locals: [],
+        templates: []
+      };
+    }());
+    var child2 = (function() {
+      var child0 = (function() {
+        var child0 = (function() {
+          return {
+            meta: {
+              "fragmentReason": false,
+              "revision": "Ember@2.2.0-beta.1",
+              "loc": {
+                "source": null,
+                "start": {
+                  "line": 35,
+                  "column": 24
+                },
+                "end": {
+                  "line": 40,
+                  "column": 24
+                }
+              },
+              "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+            },
+            isEmpty: false,
+            arity: 1,
+            cachedFragment: null,
+            hasRendered: false,
+            buildFragment: function buildFragment(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createTextNode("                            ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("tr");
+              dom.setAttribute(el1,"class","tr -no-border");
+              var el2 = dom.createTextNode("\n                                ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -icon");
+              var el3 = dom.createElement("i");
+              dom.setAttribute(el3,"class","material-icons");
+              var el4 = dom.createTextNode("lens");
+              dom.appendChild(el3, el4);
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                                ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -string");
+              var el3 = dom.createComment("");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                            ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+              var element0 = dom.childAt(fragment, [1]);
+              var element1 = dom.childAt(element0, [1, 0]);
+              var morphs = new Array(3);
+              morphs[0] = dom.createAttrMorph(element0, 'style');
+              morphs[1] = dom.createAttrMorph(element1, 'style');
+              morphs[2] = dom.createMorphAt(dom.childAt(element0, [3]),0,0);
+              return morphs;
+            },
+            statements: [
+              ["attribute","style",["get","line.color",["loc",[null,[36,62],[36,72]]]]],
+              ["attribute","style",["get","item.color",["loc",[null,[37,87],[37,97]]]]],
+              ["content","item.name",["loc",[null,[38,55],[38,68]]]]
+            ],
+            locals: ["item"],
+            templates: []
+          };
+        }());
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.2.0-beta.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 28,
+                "column": 12
+              },
+              "end": {
+                "line": 43,
+                "column": 12
+              }
+            },
+            "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("                ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("table");
+            dom.setAttribute(el1,"class","table");
+            var el2 = dom.createTextNode("\n                    ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("thead");
+            dom.setAttribute(el2,"class","thead");
+            var el3 = dom.createTextNode("\n                        ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("th");
+            dom.setAttribute(el3,"class","th -icon");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n                        ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("th");
+            dom.setAttribute(el3,"class","th -string");
+            var el4 = dom.createTextNode("Containers");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n                    ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                    ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("tbody");
+            dom.setAttribute(el2,"class","tbody -compact");
+            var el3 = dom.createTextNode("\n");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createComment("");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("                    ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var morphs = new Array(1);
+            morphs[0] = dom.createMorphAt(dom.childAt(fragment, [1, 3]),1,1);
+            return morphs;
+          },
+          statements: [
+            ["block","each",[["get","legendItems",["loc",[null,[35,32],[35,43]]]]],[],0,null,["loc",[null,[35,24],[40,33]]]]
+          ],
+          locals: [],
+          templates: [child0]
+        };
+      }());
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 27,
+              "column": 8
+            },
+            "end": {
+              "line": 44,
+              "column": 8
+            }
+          },
+          "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [
+          ["block","sd-table",[],[],0,null,["loc",[null,[28,12],[43,25]]]]
+        ],
+        locals: [],
+        templates: [child0]
+      };
+    }());
+    var child3 = (function() {
+      var child0 = (function() {
+        var child0 = (function() {
+          return {
+            meta: {
+              "fragmentReason": false,
+              "revision": "Ember@2.2.0-beta.1",
+              "loc": {
+                "source": null,
+                "start": {
+                  "line": 55,
+                  "column": 12
+                },
+                "end": {
+                  "line": 58,
+                  "column": 12
+                }
+              },
+              "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+            },
+            isEmpty: false,
+            arity: 0,
+            cachedFragment: null,
+            hasRendered: false,
+            buildFragment: function buildFragment(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createTextNode("                ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("br");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n                ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("strong");
+              var el2 = dom.createTextNode("NOTE: this node has ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createComment("");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode(" childs. Only the slowest one is shown.");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+              var morphs = new Array(1);
+              morphs[0] = dom.createMorphAt(dom.childAt(fragment, [3]),1,1);
+              return morphs;
+            },
+            statements: [
+              ["content","activeSpan.childCount",["loc",[null,[57,44],[57,69]]]]
+            ],
+            locals: [],
+            templates: []
+          };
+        }());
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.2.0-beta.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 48,
+                "column": 8
+              },
+              "end": {
+                "line": 59,
+                "column": 8
+              }
+            },
+            "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("            ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("strong");
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode(" –");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n            Container:                      ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("b");
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n            Command Line:                   ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("b");
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n            Time in this node and childs:   ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("b");
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n            Time in this node:              ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("b");
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n\n");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createComment("");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var morphs = new Array(6);
+            morphs[0] = dom.createMorphAt(dom.childAt(fragment, [1]),0,0);
+            morphs[1] = dom.createMorphAt(dom.childAt(fragment, [3]),0,0);
+            morphs[2] = dom.createMorphAt(dom.childAt(fragment, [5]),0,0);
+            morphs[3] = dom.createMorphAt(dom.childAt(fragment, [7]),0,0);
+            morphs[4] = dom.createMorphAt(dom.childAt(fragment, [9]),0,0);
+            morphs[5] = dom.createMorphAt(fragment,11,11,contextualElement);
+            dom.insertBoundary(fragment, null);
+            return morphs;
+          },
+          statements: [
+            ["content","activeSpan.name",["loc",[null,[49,20],[49,39]]]],
+            ["content","activeSpan.container",["loc",[null,[50,47],[50,71]]]],
+            ["content","activeSpan.container",["loc",[null,[51,47],[51,71]]]],
+            ["content","activeSpan.container",["loc",[null,[52,47],[52,71]]]],
+            ["content","activeSpan.timeInNode",["loc",[null,[53,47],[53,72]]]],
+            ["block","if",[["get","activeSpan.childCount",["loc",[null,[55,18],[55,39]]]]],[],0,null,["loc",[null,[55,12],[58,19]]]]
+          ],
+          locals: [],
+          templates: [child0]
+        };
+      }());
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 47,
+              "column": 4
+            },
+            "end": {
+              "line": 60,
+              "column": 4
+            }
+          },
+          "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [
+          ["block","if",[["get","activeSpan",["loc",[null,[48,14],[48,24]]]]],[],0,null,["loc",[null,[48,8],[59,15]]]]
+        ],
+        locals: [],
+        templates: [child0]
+      };
+    }());
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "triple-curlies"
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 62,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/flame-ui.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createElement("div");
+        dom.setAttribute(el1,"class","flex-scaffholding -column");
+        var el2 = dom.createTextNode("\n");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createComment("");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n    ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("div");
+        dom.setAttribute(el2,"class","flex-scaffholding -row flex-grow");
+        var el3 = dom.createTextNode("\n");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("    ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n\n");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createComment("");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var element3 = dom.childAt(fragment, [0]);
+        var element4 = dom.childAt(element3, [3]);
+        var morphs = new Array(4);
+        morphs[0] = dom.createMorphAt(element3,1,1);
+        morphs[1] = dom.createMorphAt(element4,1,1);
+        morphs[2] = dom.createMorphAt(element4,3,3);
+        morphs[3] = dom.createMorphAt(element3,5,5);
+        return morphs;
+      },
+      statements: [
+        ["block","sd-panel-header",[],[],0,null,["loc",[null,[2,4],[17,24]]]],
+        ["block","sd-panel-content",[],["class","flex-grow -overflow-visible -flexbox"],1,null,["loc",[null,[20,8],[25,29]]]],
+        ["block","sd-panel-sidebar",[],[],2,null,["loc",[null,[27,8],[44,29]]]],
+        ["block","sd-panel-footer",[],[],3,null,["loc",[null,[47,4],[60,24]]]]
+      ],
+      locals: [],
+      templates: [child0, child1, child2, child3]
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/input-toggle', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type",
+            "multiple-nodes"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 3,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/input-toggle.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createElement("span");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var element0 = dom.childAt(fragment, [2]);
+        var morphs = new Array(2);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        morphs[1] = dom.createElementMorph(element0);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["inline","input",[],["type","checkbox","name",["subexpr","@mut",[["get","name",["loc",[null,[1,29],[1,33]]]]],[],[]],"checked",["subexpr","@mut",[["get","checked",["loc",[null,[1,42],[1,49]]]]],[],[]],"disabled",["subexpr","@mut",[["get","disabled",["loc",[null,[1,59],[1,67]]]]],[],[]],"readonly",["subexpr","@mut",[["get","readonly",["loc",[null,[1,77],[1,85]]]]],[],[]]],["loc",[null,[1,0],[1,87]]]],
+        ["element","action",["toggle"],[],["loc",[null,[2,6],[2,25]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/s-panel-sidebar', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 2,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/s-panel-sidebar.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["content","yield",["loc",[null,[1,0],[1,9]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-dropdown-item', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    var child0 = (function() {
+      return {
+        meta: {
+          "fragmentReason": {
+            "name": "missing-wrapper",
+            "problems": [
+              "wrong-type"
+            ]
+          },
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 1,
+              "column": 0
+            },
+            "end": {
+              "line": 3,
+              "column": 0
+            }
+          },
+          "moduleName": "flame-ui/templates/components/sd-dropdown-item.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("    ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment,1,1,contextualElement);
+          return morphs;
+        },
+        statements: [
+          ["content","yield",["loc",[null,[2,4],[2,13]]]]
+        ],
+        locals: [],
+        templates: []
+      };
+    }());
+    var child1 = (function() {
+      var child0 = (function() {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.2.0-beta.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 4,
+                "column": 4
+              },
+              "end": {
+                "line": 6,
+                "column": 4
+              }
+            },
+            "moduleName": "flame-ui/templates/components/sd-dropdown-item.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("        ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("a");
+            dom.setAttribute(el1,"href","#0");
+            dom.setAttribute(el1,"class","item -selected");
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var element1 = dom.childAt(fragment, [1]);
+            var morphs = new Array(2);
+            morphs[0] = dom.createElementMorph(element1);
+            morphs[1] = dom.createMorphAt(element1,0,0);
+            return morphs;
+          },
+          statements: [
+            ["element","action",["setDropdownStatus",false],[],["loc",[null,[5,44],[5,80]]]],
+            ["content","item.name",["loc",[null,[5,81],[5,94]]]]
+          ],
+          locals: [],
+          templates: []
+        };
+      }());
+      var child1 = (function() {
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.2.0-beta.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 6,
+                "column": 4
+              },
+              "end": {
+                "line": 8,
+                "column": 4
+              }
+            },
+            "moduleName": "flame-ui/templates/components/sd-dropdown-item.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("        ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("a");
+            dom.setAttribute(el1,"href","#0");
+            dom.setAttribute(el1,"class","item");
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var element0 = dom.childAt(fragment, [1]);
+            var morphs = new Array(2);
+            morphs[0] = dom.createElementMorph(element0);
+            morphs[1] = dom.createMorphAt(element0,0,0);
+            return morphs;
+          },
+          statements: [
+            ["element","action",["selectOption",["get","item.value",["loc",[null,[7,58],[7,68]]]]],[],["loc",[null,[7,34],[7,70]]]],
+            ["content","item.name",["loc",[null,[7,71],[7,84]]]]
+          ],
+          locals: [],
+          templates: []
+        };
+      }());
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 3,
+              "column": 0
+            },
+            "end": {
+              "line": 9,
+              "column": 0
+            }
+          },
+          "moduleName": "flame-ui/templates/components/sd-dropdown-item.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [
+          ["block","if",[["get","isSelected",["loc",[null,[4,10],[4,20]]]]],[],0,1,["loc",[null,[4,4],[8,11]]]]
+        ],
+        locals: [],
+        templates: [child0, child1]
+      };
+    }());
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 10,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-dropdown-item.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        dom.insertBoundary(fragment, null);
+        return morphs;
+      },
+      statements: [
+        ["block","if",[["get","hasBlock",["loc",[null,[1,6],[1,14]]]]],[],0,1,["loc",[null,[1,0],[9,7]]]]
+      ],
+      locals: [],
+      templates: [child0, child1]
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-dropdown-trigger', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 2,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-dropdown-trigger.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["content","yield",["loc",[null,[1,0],[1,9]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-dropdown', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    var child0 = (function() {
+      return {
+        meta: {
+          "fragmentReason": {
+            "name": "missing-wrapper",
+            "problems": [
+              "wrong-type"
+            ]
+          },
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 1,
+              "column": 0
+            },
+            "end": {
+              "line": 7,
+              "column": 0
+            }
+          },
+          "moduleName": "flame-ui/templates/components/sd-dropdown.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("    ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment,1,1,contextualElement);
+          return morphs;
+        },
+        statements: [
+          ["content","label",["loc",[null,[6,4],[6,13]]]]
+        ],
+        locals: [],
+        templates: []
+      };
+    }());
+    var child1 = (function() {
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 11,
+              "column": 8
+            },
+            "end": {
+              "line": 18,
+              "column": 8
+            }
+          },
+          "moduleName": "flame-ui/templates/components/sd-dropdown.hbs"
+        },
+        isEmpty: false,
+        arity: 1,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("            ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment,1,1,contextualElement);
+          return morphs;
+        },
+        statements: [
+          ["inline","sd-dropdown-item",[],["item",["subexpr","@mut",[["get","item",["loc",[null,[13,36],[13,40]]]]],[],[]],"selectedOption",["subexpr","@mut",[["get","selectedOption",["loc",[null,[14,36],[14,50]]]]],[],[]],"selectOption","selectOption","setDropdownStatus","setDropdownStatus"],["loc",[null,[12,12],[17,10]]]]
+        ],
+        locals: ["item"],
+        templates: []
+      };
+    }());
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type",
+            "multiple-nodes"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 21,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-dropdown.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createElement("div");
+        dom.setAttribute(el1,"class","sd-dropdown");
+        var el2 = dom.createTextNode("\n    ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("ul");
+        dom.setAttribute(el2,"class","list");
+        var el3 = dom.createTextNode("\n");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("    ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(2);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        morphs[1] = dom.createMorphAt(dom.childAt(fragment, [2, 1]),1,1);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["block","sd-dropdown-trigger",[],["class",["subexpr","@mut",[["get","buttonClasses",["loc",[null,[2,22],[2,35]]]]],[],[]],"toggleDropdown","toggleDropdown","setupHeight","setupHeight"],0,null,["loc",[null,[1,0],[7,24]]]],
+        ["block","each",[["get","items",["loc",[null,[11,16],[11,21]]]]],[],1,null,["loc",[null,[11,8],[18,17]]]]
+      ],
+      locals: [],
+      templates: [child0, child1]
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-header', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    var child0 = (function() {
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 2,
+              "column": 4
+            },
+            "end": {
+              "line": 4,
+              "column": 4
+            }
+          },
+          "moduleName": "flame-ui/templates/components/sd-header.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("        ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("img");
+          dom.setAttribute(el1,"src","sysdig_white.svg");
+          dom.setAttribute(el1,"onerror","this.src = 'sysdig_white.png'");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes() { return []; },
+        statements: [
+
+        ],
+        locals: [],
+        templates: []
+      };
+    }());
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "multiple-nodes"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 10,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-header.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createElement("nav");
+        dom.setAttribute(el1,"class","navigator -align-left");
+        var el2 = dom.createTextNode("\n");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createComment("");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createElement("div");
+        dom.setAttribute(el1,"class","separator");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createElement("nav");
+        dom.setAttribute(el1,"class","navigator -align-right");
+        var el2 = dom.createTextNode("\n    ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("a");
+        dom.setAttribute(el2,"href","#");
+        dom.setAttribute(el2,"class","item");
+        var el3 = dom.createElement("i");
+        dom.setAttribute(el3,"class","material-icons");
+        var el4 = dom.createTextNode("help");
+        dom.appendChild(el3, el4);
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(dom.childAt(fragment, [0]),1,1);
+        return morphs;
+      },
+      statements: [
+        ["block","link-to",["index"],["class","logo"],0,null,["loc",[null,[2,4],[4,16]]]]
+      ],
+      locals: [],
+      templates: [child0]
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-panel-content', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 2,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-panel-content.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["content","yield",["loc",[null,[1,0],[1,9]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-panel-footer', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 2,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-panel-footer.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["content","yield",["loc",[null,[1,0],[1,9]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-panel-header', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 2,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-panel-header.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["content","yield",["loc",[null,[1,0],[1,9]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-panel', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 2,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-panel.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["content","yield",["loc",[null,[1,0],[1,9]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-tab-item', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 2,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-tab-item.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["content","yield",["loc",[null,[1,0],[1,9]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-table', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": false,
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 6,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-table.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createElement("div");
+        var el2 = dom.createTextNode("\n    ");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createElement("table");
+        dom.setAttribute(el2,"class","table");
+        var el3 = dom.createTextNode("\n        ");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createComment("");
+        dom.appendChild(el2, el3);
+        var el3 = dom.createTextNode("\n    ");
+        dom.appendChild(el2, el3);
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var element0 = dom.childAt(fragment, [0]);
+        var morphs = new Array(2);
+        morphs[0] = dom.createAttrMorph(element0, 'class');
+        morphs[1] = dom.createMorphAt(dom.childAt(element0, [1]),1,1);
+        return morphs;
+      },
+      statements: [
+        ["attribute","class",["subexpr","if",[["get","hasStickHeader",["loc",[null,[1,16],[1,30]]]],"sd-table-inner"],[],["loc",[null,[1,11],[1,49]]]]],
+        ["content","yield",["loc",[null,[3,8],[3,17]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/sd-tabs-list', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 2,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/sd-tabs-list.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(1);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        return morphs;
+      },
+      statements: [
+        ["inline","yield",[["get","this",["loc",[null,[1,8],[1,12]]]]],[],["loc",[null,[1,0],[1,14]]]]
+      ],
+      locals: [],
+      templates: []
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/span-log', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    var child0 = (function() {
+      var child0 = (function() {
+        var child0 = (function() {
+          return {
+            meta: {
+              "fragmentReason": false,
+              "revision": "Ember@2.2.0-beta.1",
+              "loc": {
+                "source": null,
+                "start": {
+                  "line": 6,
+                  "column": 16
+                },
+                "end": {
+                  "line": 8,
+                  "column": 16
+                }
+              },
+              "moduleName": "flame-ui/templates/components/span-log.hbs"
+            },
+            isEmpty: false,
+            arity: 0,
+            cachedFragment: null,
+            hasRendered: false,
+            buildFragment: function buildFragment(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createTextNode("                    ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("button");
+              var el2 = dom.createTextNode("this span only");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+              var element3 = dom.childAt(fragment, [1]);
+              var morphs = new Array(1);
+              morphs[0] = dom.createElementMorph(element3);
+              return morphs;
+            },
+            statements: [
+              ["element","action",["selectMode","SPAN"],[],["loc",[null,[7,28],[7,58]]]]
+            ],
+            locals: [],
+            templates: []
+          };
+        }());
+        var child1 = (function() {
+          return {
+            meta: {
+              "fragmentReason": false,
+              "revision": "Ember@2.2.0-beta.1",
+              "loc": {
+                "source": null,
+                "start": {
+                  "line": 9,
+                  "column": 16
+                },
+                "end": {
+                  "line": 11,
+                  "column": 16
+                }
+              },
+              "moduleName": "flame-ui/templates/components/span-log.hbs"
+            },
+            isEmpty: false,
+            arity: 0,
+            cachedFragment: null,
+            hasRendered: false,
+            buildFragment: function buildFragment(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createTextNode("                    ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("button");
+              var el2 = dom.createTextNode("this span and children");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+              var element2 = dom.childAt(fragment, [1]);
+              var morphs = new Array(1);
+              morphs[0] = dom.createElementMorph(element2);
+              return morphs;
+            },
+            statements: [
+              ["element","action",["selectMode","SPAN_CHILD"],[],["loc",[null,[10,28],[10,64]]]]
+            ],
+            locals: [],
+            templates: []
+          };
+        }());
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.2.0-beta.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 5,
+                "column": 12
+              },
+              "end": {
+                "line": 12,
+                "column": 12
+              }
+            },
+            "moduleName": "flame-ui/templates/components/span-log.hbs"
+          },
+          isEmpty: false,
+          arity: 1,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createComment("");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createComment("");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var morphs = new Array(2);
+            morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+            morphs[1] = dom.createMorphAt(fragment,1,1,contextualElement);
+            dom.insertBoundary(fragment, 0);
+            dom.insertBoundary(fragment, null);
+            return morphs;
+          },
+          statements: [
+            ["block","sd-tab-item",[],["value","1","activeTab",["subexpr","@mut",[["get","list.activeTab",["loc",[null,[6,51],[6,65]]]]],[],[]],"activateTab","activateTab","registerTab","registerTab","targetObject",["subexpr","@mut",[["get","list",["loc",[null,[6,131],[6,135]]]]],[],[]]],0,null,["loc",[null,[6,16],[8,32]]]],
+            ["block","sd-tab-item",[],["value","2","activeTab",["subexpr","@mut",[["get","list.activeTab",["loc",[null,[9,51],[9,65]]]]],[],[]],"activateTab","activateTab","registerTab","registerTab","targetObject",["subexpr","@mut",[["get","list",["loc",[null,[9,131],[9,135]]]]],[],[]]],1,null,["loc",[null,[9,16],[11,32]]]]
+          ],
+          locals: ["list"],
+          templates: [child0, child1]
+        };
+      }());
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 2,
+              "column": 4
+            },
+            "end": {
+              "line": 14,
+              "column": 4
+            }
+          },
+          "moduleName": "flame-ui/templates/components/span-log.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("        ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("span");
+          dom.setAttribute(el1,"class","text");
+          var el2 = dom.createTextNode("\n            Logs for\n");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createComment("");
+          dom.appendChild(el1, el2);
+          var el2 = dom.createTextNode("        ");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(dom.childAt(fragment, [1]),1,1);
+          return morphs;
+        },
+        statements: [
+          ["block","sd-tabs-list",[],[],0,null,["loc",[null,[5,12],[12,29]]]]
+        ],
+        locals: [],
+        templates: [child0]
+      };
+    }());
+    var child1 = (function() {
+      var child0 = (function() {
+        var child0 = (function() {
+          return {
+            meta: {
+              "fragmentReason": false,
+              "revision": "Ember@2.2.0-beta.1",
+              "loc": {
+                "source": null,
+                "start": {
+                  "line": 34,
+                  "column": 16
+                },
+                "end": {
+                  "line": 42,
+                  "column": 16
+                }
+              },
+              "moduleName": "flame-ui/templates/components/span-log.hbs"
+            },
+            isEmpty: false,
+            arity: 1,
+            cachedFragment: null,
+            hasRendered: false,
+            buildFragment: function buildFragment(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createTextNode("                    ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("tr");
+              dom.setAttribute(el1,"class","tr");
+              var el2 = dom.createTextNode("\n                        ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -icon");
+              var el3 = dom.createElement("i");
+              dom.setAttribute(el3,"class","material-icons");
+              var el4 = dom.createTextNode("lens");
+              dom.appendChild(el3, el4);
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                        ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -string");
+              var el3 = dom.createComment("");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                        ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -string");
+              var el3 = dom.createComment("");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                        ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -number");
+              var el3 = dom.createComment("");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                        ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -string");
+              dom.setAttribute(el2,"colspan","3");
+              var el3 = dom.createComment("");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+              var element0 = dom.childAt(fragment, [1]);
+              var element1 = dom.childAt(element0, [1, 0]);
+              var morphs = new Array(6);
+              morphs[0] = dom.createAttrMorph(element0, 'style');
+              morphs[1] = dom.createAttrMorph(element1, 'style');
+              morphs[2] = dom.createMorphAt(dom.childAt(element0, [3]),0,0);
+              morphs[3] = dom.createMorphAt(dom.childAt(element0, [5]),0,0);
+              morphs[4] = dom.createMorphAt(dom.childAt(element0, [7]),0,0);
+              morphs[5] = dom.createMorphAt(dom.childAt(element0, [9]),0,0);
+              return morphs;
+            },
+            statements: [
+              ["attribute","style",["get","line.color",["loc",[null,[35,43],[35,53]]]]],
+              ["attribute","style",["get","line.lineColor",["loc",[null,[36,79],[36,93]]]]],
+              ["content","line.containerName",["loc",[null,[37,47],[37,69]]]],
+              ["content","line.k",["loc",[null,[38,47],[38,57]]]],
+              ["content","line.t",["loc",[null,[39,47],[39,57]]]],
+              ["content","line.b",["loc",[null,[40,59],[40,69]]]]
+            ],
+            locals: ["line"],
+            templates: []
+          };
+        }());
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.2.0-beta.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 17,
+                "column": 8
+              },
+              "end": {
+                "line": 44,
+                "column": 8
+              }
+            },
+            "moduleName": "flame-ui/templates/components/span-log.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("            ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("thead");
+            dom.setAttribute(el1,"class","thead");
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -icon");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -string");
+            var el3 = dom.createTextNode("\n                    ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("div");
+            dom.setAttribute(el3,"class","th-inner");
+            var el4 = dom.createTextNode("Container");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -string");
+            var el3 = dom.createTextNode("\n                    ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("div");
+            dom.setAttribute(el3,"class","th-inner");
+            var el4 = dom.createTextNode("K");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n                        ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -number");
+            var el3 = dom.createTextNode("\n                    ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("div");
+            dom.setAttribute(el3,"class","th-inner");
+            var el4 = dom.createTextNode("Date and Time");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n                ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -string");
+            dom.setAttribute(el2,"colspan","3");
+            var el3 = dom.createTextNode("\n                    ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("div");
+            dom.setAttribute(el3,"class","th-inner");
+            var el4 = dom.createTextNode("Message");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n            ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("tbody");
+            dom.setAttribute(el1,"class","tbody -compact");
+            var el2 = dom.createTextNode("\n");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("            ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var morphs = new Array(1);
+            morphs[0] = dom.createMorphAt(dom.childAt(fragment, [3]),1,1);
+            return morphs;
+          },
+          statements: [
+            ["block","each",[["get","lines",["loc",[null,[34,24],[34,29]]]]],["key","@index"],0,null,["loc",[null,[34,16],[42,25]]]]
+          ],
+          locals: [],
+          templates: [child0]
+        };
+      }());
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 16,
+              "column": 4
+            },
+            "end": {
+              "line": 45,
+              "column": 4
+            }
+          },
+          "moduleName": "flame-ui/templates/components/span-log.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [
+          ["block","sd-table",[],["sticky",true],0,null,["loc",[null,[17,8],[44,21]]]]
+        ],
+        locals: [],
+        templates: [child0]
+      };
+    }());
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "triple-curlies"
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 47,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/span-log.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createElement("div");
+        dom.setAttribute(el1,"class","flex-scaffholding -column");
+        var el2 = dom.createTextNode("\n");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createComment("");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createTextNode("\n");
+        dom.appendChild(el1, el2);
+        var el2 = dom.createComment("");
+        dom.appendChild(el1, el2);
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var element4 = dom.childAt(fragment, [0]);
+        var morphs = new Array(2);
+        morphs[0] = dom.createMorphAt(element4,1,1);
+        morphs[1] = dom.createMorphAt(element4,3,3);
+        return morphs;
+      },
+      statements: [
+        ["block","sd-panel-header",[],[],0,null,["loc",[null,[2,4],[14,24]]]],
+        ["block","sd-panel-content",[],["class","flex-grow -no-padding -flexbox"],1,null,["loc",[null,[16,4],[45,25]]]]
+      ],
+      locals: [],
+      templates: [child0, child1]
+    };
+  }()));
+
+});
+define('flame-ui/templates/components/transactions-table', ['exports'], function (exports) {
+
+  'use strict';
+
+  exports['default'] = Ember.HTMLBars.template((function() {
+    var child0 = (function() {
+      return {
+        meta: {
+          "fragmentReason": {
+            "name": "triple-curlies"
+          },
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 1,
+              "column": 0
+            },
+            "end": {
+              "line": 3,
+              "column": 0
+            }
+          },
+          "moduleName": "flame-ui/templates/components/transactions-table.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode("    ");
+          dom.appendChild(el0, el1);
+          var el1 = dom.createElement("h1");
+          dom.setAttribute(el1,"class","title");
+          var el2 = dom.createTextNode("Transactions");
+          dom.appendChild(el1, el2);
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode("\n");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes() { return []; },
+        statements: [
+
+        ],
+        locals: [],
+        templates: []
+      };
+    }());
+    var child1 = (function() {
+      var child0 = (function() {
+        var child0 = (function() {
+          return {
+            meta: {
+              "fragmentReason": false,
+              "revision": "Ember@2.2.0-beta.1",
+              "loc": {
+                "source": null,
+                "start": {
+                  "line": 25,
+                  "column": 12
+                },
+                "end": {
+                  "line": 33,
+                  "column": 12
+                }
+              },
+              "moduleName": "flame-ui/templates/components/transactions-table.hbs"
+            },
+            isEmpty: false,
+            arity: 1,
+            cachedFragment: null,
+            hasRendered: false,
+            buildFragment: function buildFragment(dom) {
+              var el0 = dom.createDocumentFragment();
+              var el1 = dom.createTextNode("                ");
+              dom.appendChild(el0, el1);
+              var el1 = dom.createElement("tr");
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -string");
+              var el3 = dom.createComment("");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -number");
+              var el3 = dom.createComment("");
+              dom.appendChild(el2, el3);
+              var el3 = dom.createTextNode(" calls");
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -number");
+              var el3 = dom.createElement("a");
+              dom.setAttribute(el3,"href","#0");
+              var el4 = dom.createComment("");
+              dom.appendChild(el3, el4);
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -number");
+              var el3 = dom.createElement("a");
+              dom.setAttribute(el3,"href","#0");
+              var el4 = dom.createComment("");
+              dom.appendChild(el3, el4);
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                    ");
+              dom.appendChild(el1, el2);
+              var el2 = dom.createElement("td");
+              dom.setAttribute(el2,"class","td -number");
+              var el3 = dom.createElement("a");
+              dom.setAttribute(el3,"href","#0");
+              var el4 = dom.createComment("");
+              dom.appendChild(el3, el4);
+              dom.appendChild(el2, el3);
+              dom.appendChild(el1, el2);
+              var el2 = dom.createTextNode("\n                ");
+              dom.appendChild(el1, el2);
+              dom.appendChild(el0, el1);
+              var el1 = dom.createTextNode("\n");
+              dom.appendChild(el0, el1);
+              return el0;
+            },
+            buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+              var element0 = dom.childAt(fragment, [1]);
+              var element1 = dom.childAt(element0, [5, 0]);
+              var element2 = dom.childAt(element0, [7, 0]);
+              var element3 = dom.childAt(element0, [9, 0]);
+              var morphs = new Array(10);
+              morphs[0] = dom.createAttrMorph(element0, 'class');
+              morphs[1] = dom.createElementMorph(element0);
+              morphs[2] = dom.createMorphAt(dom.childAt(element0, [1]),0,0);
+              morphs[3] = dom.createMorphAt(dom.childAt(element0, [3]),0,0);
+              morphs[4] = dom.createElementMorph(element1);
+              morphs[5] = dom.createMorphAt(element1,0,0);
+              morphs[6] = dom.createElementMorph(element2);
+              morphs[7] = dom.createMorphAt(element2,0,0);
+              morphs[8] = dom.createElementMorph(element3);
+              morphs[9] = dom.createMorphAt(element3,0,0);
+              return morphs;
+            },
+            statements: [
+              ["attribute","class",["concat",["tr -link ",["subexpr","if",[["subexpr","is-equal",[],["a",["get","transaction.node",["loc",[null,[26,53],[26,69]]]],"b",["get","selected",["loc",[null,[26,72],[26,80]]]]],["loc",[null,[26,41],[26,81]]]],"-selected"],[],["loc",[null,[26,36],[26,95]]]]]]],
+              ["element","action",["select",["get","transaction.node",["loc",[null,[26,115],[26,131]]]]],[],["loc",[null,[26,97],[26,133]]]],
+              ["content","transaction.node",["loc",[null,[27,43],[27,63]]]],
+              ["content","transaction.n",["loc",[null,[28,43],[28,60]]]],
+              ["element","action",["select",["get","transaction.node",["loc",[null,[29,74],[29,90]]]],"avg"],["bubbles",false],["loc",[null,[29,56],[29,112]]]],
+              ["content","transaction.avg",["loc",[null,[29,113],[29,132]]]],
+              ["element","action",["select",["get","transaction.node",["loc",[null,[30,74],[30,90]]]],"min"],["bubbles",false],["loc",[null,[30,56],[30,112]]]],
+              ["content","transaction.min",["loc",[null,[30,113],[30,132]]]],
+              ["element","action",["select",["get","transaction.node",["loc",[null,[31,74],[31,90]]]],"max"],["bubbles",false],["loc",[null,[31,56],[31,112]]]],
+              ["content","transaction.max",["loc",[null,[31,113],[31,132]]]]
+            ],
+            locals: ["transaction"],
+            templates: []
+          };
+        }());
+        return {
+          meta: {
+            "fragmentReason": false,
+            "revision": "Ember@2.2.0-beta.1",
+            "loc": {
+              "source": null,
+              "start": {
+                "line": 6,
+                "column": 4
+              },
+              "end": {
+                "line": 35,
+                "column": 4
+              }
+            },
+            "moduleName": "flame-ui/templates/components/transactions-table.hbs"
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode("        ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("thead");
+            dom.setAttribute(el1,"class","thead");
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -string");
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("div");
+            dom.setAttribute(el3,"class","th-inner");
+            var el4 = dom.createTextNode("Node");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n            ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -number");
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("div");
+            dom.setAttribute(el3,"class","th-inner");
+            var el4 = dom.createTextNode("Calls");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n            ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -number");
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("div");
+            dom.setAttribute(el3,"class","th-inner");
+            var el4 = dom.createTextNode("Avg Time");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n            ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -number");
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("div");
+            dom.setAttribute(el3,"class","th-inner");
+            var el4 = dom.createTextNode("Min Time");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n            ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n            ");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createElement("th");
+            dom.setAttribute(el2,"class","th -number");
+            var el3 = dom.createTextNode("\n                ");
+            dom.appendChild(el2, el3);
+            var el3 = dom.createElement("div");
+            dom.setAttribute(el3,"class","th-inner");
+            var el4 = dom.createTextNode("Max Time");
+            dom.appendChild(el3, el4);
+            dom.appendChild(el2, el3);
+            var el3 = dom.createTextNode("\n            ");
+            dom.appendChild(el2, el3);
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("\n        ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n        ");
+            dom.appendChild(el0, el1);
+            var el1 = dom.createElement("tbody");
+            dom.setAttribute(el1,"class","tbody");
+            var el2 = dom.createTextNode("\n");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createComment("");
+            dom.appendChild(el1, el2);
+            var el2 = dom.createTextNode("        ");
+            dom.appendChild(el1, el2);
+            dom.appendChild(el0, el1);
+            var el1 = dom.createTextNode("\n");
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+            var morphs = new Array(1);
+            morphs[0] = dom.createMorphAt(dom.childAt(fragment, [3]),1,1);
+            return morphs;
+          },
+          statements: [
+            ["block","each",[["get","transactions",["loc",[null,[25,20],[25,32]]]]],[],0,null,["loc",[null,[25,12],[33,21]]]]
+          ],
+          locals: [],
+          templates: [child0]
+        };
+      }());
+      return {
+        meta: {
+          "fragmentReason": false,
+          "revision": "Ember@2.2.0-beta.1",
+          "loc": {
+            "source": null,
+            "start": {
+              "line": 5,
+              "column": 0
+            },
+            "end": {
+              "line": 36,
+              "column": 0
+            }
+          },
+          "moduleName": "flame-ui/templates/components/transactions-table.hbs"
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment("");
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [
+          ["block","sd-table",[],["sticky",true],0,null,["loc",[null,[6,4],[35,17]]]]
+        ],
+        locals: [],
+        templates: [child0]
+      };
+    }());
+    return {
+      meta: {
+        "fragmentReason": {
+          "name": "missing-wrapper",
+          "problems": [
+            "wrong-type",
+            "multiple-nodes"
+          ]
+        },
+        "revision": "Ember@2.2.0-beta.1",
+        "loc": {
+          "source": null,
+          "start": {
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "line": 37,
+            "column": 0
+          }
+        },
+        "moduleName": "flame-ui/templates/components/transactions-table.hbs"
+      },
+      isEmpty: false,
+      arity: 0,
+      cachedFragment: null,
+      hasRendered: false,
+      buildFragment: function buildFragment(dom) {
+        var el0 = dom.createDocumentFragment();
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createTextNode("\n");
+        dom.appendChild(el0, el1);
+        var el1 = dom.createComment("");
+        dom.appendChild(el0, el1);
+        return el0;
+      },
+      buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+        var morphs = new Array(2);
+        morphs[0] = dom.createMorphAt(fragment,0,0,contextualElement);
+        morphs[1] = dom.createMorphAt(fragment,2,2,contextualElement);
+        dom.insertBoundary(fragment, 0);
+        dom.insertBoundary(fragment, null);
+        return morphs;
+      },
+      statements: [
+        ["block","sd-panel-header",[],[],0,null,["loc",[null,[1,0],[3,20]]]],
+        ["block","sd-panel-content",[],["class","-no-padding -flexbox"],1,null,["loc",[null,[5,0],[36,21]]]]
+      ],
+      locals: [],
+      templates: [child0, child1]
+    };
+  }()));
+
+});
+define('flame-ui/tests/app.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - app.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'app.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/app-container.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/app-container.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/app-container.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/flame-ui.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/flame-ui.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/flame-ui.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/input-toggle.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/input-toggle.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/input-toggle.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-dropdown-item.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-dropdown-item.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-dropdown-item.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-dropdown-trigger.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-dropdown-trigger.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-dropdown-trigger.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-dropdown.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-dropdown.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-dropdown.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-header.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-header.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-header.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-panel-content.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-panel-content.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-panel-content.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-panel-footer.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-panel-footer.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-panel-footer.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-panel-header.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-panel-header.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-panel-header.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-panel-sidebar.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-panel-sidebar.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-panel-sidebar.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-panel.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-panel.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-panel.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-tab-item.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-tab-item.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-tab-item.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-table.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-table.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-table.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/sd-tabs-list.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/sd-tabs-list.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/sd-tabs-list.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/span-log.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/span-log.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/span-log.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/components/transactions-table.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - components/transactions-table.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'components/transactions-table.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/helpers/fmt-time-interval.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - helpers/fmt-time-interval.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'helpers/fmt-time-interval.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/helpers/fmtTimeInterval.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - helpers/fmtTimeInterval.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'helpers/fmtTimeInterval.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/helpers/is-equal.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - helpers/is-equal.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'helpers/is-equal.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/helpers/resolver', ['exports', 'ember/resolver', 'flame-ui/config/environment'], function (exports, Resolver, config) {
+
+  'use strict';
+
+  var resolver = Resolver['default'].create();
+
+  resolver.namespace = {
+    modulePrefix: config['default'].modulePrefix,
+    podModulePrefix: config['default'].podModulePrefix
+  };
+
+  exports['default'] = resolver;
+
+});
+define('flame-ui/tests/helpers/resolver.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - helpers/resolver.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'helpers/resolver.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/helpers/start-app', ['exports', 'ember', 'flame-ui/app', 'flame-ui/config/environment'], function (exports, Ember, Application, config) {
+
+  'use strict';
+
+
+
+  exports['default'] = startApp;
+  function startApp(attrs) {
+    var application;
+
+    var attributes = Ember['default'].merge({}, config['default'].APP);
+    attributes = Ember['default'].merge(attributes, attrs); // use defaults, but you can override;
+
+    Ember['default'].run(function () {
+      application = Application['default'].create(attributes);
+      application.setupForTesting();
+      application.injectTestHelpers();
+    });
+
+    return application;
+  }
+
+});
+define('flame-ui/tests/helpers/start-app.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - helpers/start-app.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'helpers/start-app.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/input-toggle-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('input-toggle', 'Integration | Component | input toggle', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 16
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'input-toggle', ['loc', [null, [1, 0], [1, 16]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'input-toggle', [], [], 0, null, ['loc', [null, [2, 4], [4, 21]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/input-toggle-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/input-toggle-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/input-toggle-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-dropdown-item-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-dropdown-item', 'Integration | Component | sd dropdown item', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 20
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-dropdown-item', ['loc', [null, [1, 0], [1, 20]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-dropdown-item', [], [], 0, null, ['loc', [null, [2, 4], [4, 25]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-dropdown-item-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-dropdown-item-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-dropdown-item-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-dropdown-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-dropdown', 'Integration | Component | sd dropdown', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 15
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-dropdown', ['loc', [null, [1, 0], [1, 15]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-dropdown', [], [], 0, null, ['loc', [null, [2, 4], [4, 20]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-dropdown-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-dropdown-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-dropdown-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-dropdown-trigger-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-dropdown-trigger', 'Integration | Component | sd dropdown trigger', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 23
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-dropdown-trigger', ['loc', [null, [1, 0], [1, 23]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-dropdown-trigger', [], [], 0, null, ['loc', [null, [2, 4], [4, 28]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-dropdown-trigger-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-dropdown-trigger-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-dropdown-trigger-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-header-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-header', 'Integration | Component | sd header', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 13
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-header', ['loc', [null, [1, 0], [1, 13]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-header', [], [], 0, null, ['loc', [null, [2, 4], [4, 18]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-header-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-header-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-header-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-content-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-panel-content', 'Integration | Component | sd panel content', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 20
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-panel-content', ['loc', [null, [1, 0], [1, 20]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-panel-content', [], [], 0, null, ['loc', [null, [2, 4], [4, 25]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-content-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-panel-content-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-panel-content-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-footer-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-panel-footer', 'Integration | Component | s panel footer', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 19
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-panel-footer', ['loc', [null, [1, 0], [1, 19]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-panel-footer', [], [], 0, null, ['loc', [null, [2, 4], [4, 24]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-footer-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-panel-footer-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-panel-footer-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-header-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-panel-header', 'Integration | Component | s panel header', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 19
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-panel-header', ['loc', [null, [1, 0], [1, 19]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-panel-header', [], [], 0, null, ['loc', [null, [2, 4], [4, 24]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-header-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-panel-header-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-panel-header-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-sidebar-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-panel-sidebar', 'Integration | Component | s panel sidebar', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 20
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-panel-sidebar', ['loc', [null, [1, 0], [1, 20]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-panel-sidebar', [], [], 0, null, ['loc', [null, [2, 4], [4, 25]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-sidebar-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-panel-sidebar-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-panel-sidebar-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-panel', 'Integration | Component | s panel', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 12
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-panel', ['loc', [null, [1, 0], [1, 12]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-panel', [], [], 0, null, ['loc', [null, [2, 4], [4, 17]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-panel-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-panel-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-panel-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-tab-item-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-tab-item', 'Integration | Component | sd tab item', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 15
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-tab-item', ['loc', [null, [1, 0], [1, 15]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-tab-item', [], [], 0, null, ['loc', [null, [2, 4], [4, 20]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-tab-item-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-tab-item-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-tab-item-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-table-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-table', 'Integration | Component | sd table', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 12
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-table', ['loc', [null, [1, 0], [1, 12]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-table', [], [], 0, null, ['loc', [null, [2, 4], [4, 17]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-table-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-table-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-table-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-tabs-list-test', ['ember-qunit'], function (ember_qunit) {
+
+  'use strict';
+
+  ember_qunit.moduleForComponent('sd-tabs-list', 'Integration | Component | sd tabs list', {
+    integration: true
+  });
+
+  ember_qunit.test('it renders', function (assert) {
+    assert.expect(2);
+
+    // Set any properties with this.set('myProperty', 'value');
+    // Handle any actions with this.on('myAction', function(val) { ... });
+
+    this.render(Ember.HTMLBars.template((function () {
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 1,
+              'column': 16
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 0, 0, contextualElement);
+          dom.insertBoundary(fragment, 0);
+          dom.insertBoundary(fragment, null);
+          return morphs;
+        },
+        statements: [['content', 'sd-tabs-list', ['loc', [null, [1, 0], [1, 16]]]]],
+        locals: [],
+        templates: []
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), '');
+
+    // Template block usage:
+    this.render(Ember.HTMLBars.template((function () {
+      var child0 = (function () {
+        return {
+          meta: {
+            'fragmentReason': false,
+            'revision': 'Ember@2.2.0-beta.1',
+            'loc': {
+              'source': null,
+              'start': {
+                'line': 2,
+                'column': 4
+              },
+              'end': {
+                'line': 4,
+                'column': 4
+              }
+            }
+          },
+          isEmpty: false,
+          arity: 0,
+          cachedFragment: null,
+          hasRendered: false,
+          buildFragment: function buildFragment(dom) {
+            var el0 = dom.createDocumentFragment();
+            var el1 = dom.createTextNode('      template block text\n');
+            dom.appendChild(el0, el1);
+            return el0;
+          },
+          buildRenderNodes: function buildRenderNodes() {
+            return [];
+          },
+          statements: [],
+          locals: [],
+          templates: []
+        };
+      })();
+
+      return {
+        meta: {
+          'fragmentReason': {
+            'name': 'missing-wrapper',
+            'problems': ['wrong-type']
+          },
+          'revision': 'Ember@2.2.0-beta.1',
+          'loc': {
+            'source': null,
+            'start': {
+              'line': 1,
+              'column': 0
+            },
+            'end': {
+              'line': 5,
+              'column': 2
+            }
+          }
+        },
+        isEmpty: false,
+        arity: 0,
+        cachedFragment: null,
+        hasRendered: false,
+        buildFragment: function buildFragment(dom) {
+          var el0 = dom.createDocumentFragment();
+          var el1 = dom.createTextNode('\n');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createComment('');
+          dom.appendChild(el0, el1);
+          var el1 = dom.createTextNode('  ');
+          dom.appendChild(el0, el1);
+          return el0;
+        },
+        buildRenderNodes: function buildRenderNodes(dom, fragment, contextualElement) {
+          var morphs = new Array(1);
+          morphs[0] = dom.createMorphAt(fragment, 1, 1, contextualElement);
+          return morphs;
+        },
+        statements: [['block', 'sd-tabs-list', [], [], 0, null, ['loc', [null, [2, 4], [4, 21]]]]],
+        locals: [],
+        templates: [child0]
+      };
+    })()));
+
+    assert.equal(this.$().text().trim(), 'template block text');
+  });
+
+});
+define('flame-ui/tests/integration/components/sd-tabs-list-test.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - integration/components/sd-tabs-list-test.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'integration/components/sd-tabs-list-test.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/lib/flame-graph.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - lib/flame-graph.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'lib/flame-graph.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/mixins/clickElseWhere.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - mixins/clickElseWhere.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'mixins/clickElseWhere.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/router.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - router.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'router.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/routes/application.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - routes/application.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'routes/application.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/services/color-store.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - services/color-store.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'services/color-store.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/services/transaction-store.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - services/transaction-store.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'services/transaction-store.js should pass jshint.');
+  });
+
+});
+define('flame-ui/tests/test-helper', ['flame-ui/tests/helpers/resolver', 'ember-qunit'], function (resolver, ember_qunit) {
+
+	'use strict';
+
+	ember_qunit.setResolver(resolver['default']);
+
+});
+define('flame-ui/tests/test-helper.jshint', function () {
+
+  'use strict';
+
+  QUnit.module('JSHint - test-helper.js');
+  QUnit.test('should pass jshint', function(assert) {
+    assert.expect(1);
+    assert.ok(true, 'test-helper.js should pass jshint.');
+  });
+
+});
+/* jshint ignore:start */
+
+/* jshint ignore:end */
+
+/* jshint ignore:start */
+
+define('flame-ui/config/environment', ['ember'], function(Ember) {
+  var prefix = 'flame-ui';
+/* jshint ignore:start */
+
+try {
+  var metaName = prefix + '/config/environment';
+  var rawConfig = Ember['default'].$('meta[name="' + metaName + '"]').attr('content');
+  var config = JSON.parse(unescape(rawConfig));
+
+  return { 'default': config };
+}
+catch(err) {
+  throw new Error('Could not read config from meta tag with name "' + metaName + '".');
+}
+
+/* jshint ignore:end */
+
+});
+
+if (runningTests) {
+  require("flame-ui/tests/test-helper");
+} else {
+  require("flame-ui/app")["default"].create({"name":"flame-ui","version":"0.0.0+39e30d70"});
+}
+
+/* jshint ignore:end */
+//# sourceMappingURL=flame-ui.map
