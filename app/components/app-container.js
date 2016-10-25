@@ -48,7 +48,10 @@ export default Ember.Component.extend({
                     transactionData:    result
                 });
             });
-        } else {
+        } else if (aggregation === undefined) {
+            //
+            // Remove selection when aggregation is not selected (i.e. not on links)
+            //
             setProperties(me, {
                 transaction:        null,
                 transactionData:    null,
