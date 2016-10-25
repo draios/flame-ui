@@ -38,7 +38,6 @@ export default Ember.Component.extend({
             setProperties(me, {
                 transaction: transaction,
                 aggregation: currentAggregation,
-                span:        null,
             });
 
             me.get('transactionStore').findTransaction(transaction, currentAggregation).then(function(result) {
@@ -55,7 +54,6 @@ export default Ember.Component.extend({
             setProperties(me, {
                 transaction:        null,
                 transactionData:    null,
-                span:               null
             });
         }
     },
@@ -95,11 +93,15 @@ export default Ember.Component.extend({
                         spanLog:    result
                     });
                 });
+
+                var spanMode = get(this, 'spanMode');
+                if (spanMode) {
+                    set(this, 'spanMode', null);
+                    this.send('selectSpanMode', spanMode);
+                }
             } else {
                 setProperties(me, {
                     span:       null,
-                    spanMode:   null,
-                    spanLog:    null
                 });
             }
         },
