@@ -8,9 +8,9 @@ export default Ember.Service.extend({
         return new Ember.RSVP.Promise(function(resolve) {
             Ember.run.next(function() {
                 var data = {
-                    avg: svFillData(window.transitions.avg),
-                    min: svFillData(window.transitions.min),
-                    max: svFillData(window.transitions.max)
+                    avg: svFillData(window.transactions.avg),
+                    min: svFillData(window.transactions.min),
+                    max: svFillData(window.transactions.max)
                 };
                 var nodeIds = Object.keys(data.avg[''].ch);
 
@@ -35,13 +35,13 @@ export default Ember.Service.extend({
                 var data;
                 switch (aggregation) {
                     case 'avg':
-                        data = svFillData(window.transitions.avg);
+                        data = svFillData(window.transactions.avg);
                         break;
                     case 'min':
-                        data = svFillData(window.transitions.min);
+                        data = svFillData(window.transactions.min);
                         break;
                     case 'max':
-                        data = svFillData(window.transitions.max);
+                        data = svFillData(window.transactions.max);
                         break;
                 }
 
