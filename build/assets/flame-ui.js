@@ -78,8 +78,7 @@ define('flame-ui/components/app-container', ['exports', 'ember'], function (expo
             if (get(me, 'transaction') !== transaction || get(me, 'aggregation') !== currentAggregation) {
                 setProperties(me, {
                     transaction: transaction,
-                    aggregation: currentAggregation,
-                    span: null
+                    aggregation: currentAggregation
                 });
 
                 me.get('transactionStore').findTransaction(transaction, currentAggregation).then(function (result) {
@@ -89,11 +88,13 @@ define('flame-ui/components/app-container', ['exports', 'ember'], function (expo
                         transactionData: result
                     });
                 });
-            } else {
+            } else if (aggregation === undefined) {
+                //
+                // Remove selection when aggregation is not selected (i.e. not on links)
+                //
                 setProperties(me, {
                     transaction: null,
-                    transactionData: null,
-                    span: null
+                    transactionData: null
                 });
             }
         },
@@ -133,11 +134,15 @@ define('flame-ui/components/app-container', ['exports', 'ember'], function (expo
                             spanLog: result
                         });
                     });
+
+                    var spanMode = get(this, 'spanMode');
+                    if (spanMode) {
+                        set(this, 'spanMode', null);
+                        this.send('selectSpanMode', spanMode);
+                    }
                 } else {
                     setProperties(me, {
-                        span: null,
-                        spanMode: null,
-                        spanLog: null
+                        span: null
                     });
                 }
             },
@@ -1227,12 +1232,16 @@ define('flame-ui/services/color-store', ['exports', 'ember'], function (exports,
 
     /* global d3 */
 
+    var colors = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3',
+    // '#a6d854',
+    '#ffd92f', '#e5c494', '#b3b3b3'];
+
     exports['default'] = Ember['default'].Service.extend({
         init: function init() {
             this._super.apply(this, arguments);
 
             this.setProperties({
-                colors: d3.scale.category10(),
+                colors: d3.scale.ordinal().range(colors),
                 lastColorIndex: 0,
                 containerNames: {},
                 containerNameList: []
@@ -1265,9 +1274,9 @@ define('flame-ui/services/transaction-store', ['exports', 'ember', 'flame-ui/hel
             return new Ember['default'].RSVP.Promise(function (resolve) {
                 Ember['default'].run.next(function () {
                     var data = {
-                        avg: svFillData(window.transitions.avg),
-                        min: svFillData(window.transitions.min),
-                        max: svFillData(window.transitions.max)
+                        avg: svFillData(window.transactions.avg),
+                        min: svFillData(window.transactions.min),
+                        max: svFillData(window.transactions.max)
                     };
                     var nodeIds = Object.keys(data.avg[''].ch);
 
@@ -1292,13 +1301,13 @@ define('flame-ui/services/transaction-store', ['exports', 'ember', 'flame-ui/hel
                     var data;
                     switch (aggregation) {
                         case 'avg':
-                            data = svFillData(window.transitions.avg);
+                            data = svFillData(window.transactions.avg);
                             break;
                         case 'min':
-                            data = svFillData(window.transitions.min);
+                            data = svFillData(window.transactions.min);
                             break;
                         case 'max':
-                            data = svFillData(window.transitions.max);
+                            data = svFillData(window.transactions.max);
                             break;
                     }
 
@@ -3776,7 +3785,7 @@ define('flame-ui/templates/components/span-log', ['exports'], function (exports)
             dom.appendChild(el2, el3);
             var el3 = dom.createElement("div");
             dom.setAttribute(el3,"class","th-inner");
-            var el4 = dom.createTextNode("K");
+            var el4 = dom.createTextNode("Span Name");
             dom.appendChild(el3, el4);
             dom.appendChild(el2, el3);
             var el3 = dom.createTextNode("\n                        ");
@@ -6758,7 +6767,7 @@ catch(err) {
 if (runningTests) {
   require("flame-ui/tests/test-helper");
 } else {
-  require("flame-ui/app")["default"].create({"name":"flame-ui","version":"0.0.0+39e30d70"});
+  require("flame-ui/app")["default"].create({"name":"flame-ui","version":"0.0.0+3fc5f790"});
 }
 
 /* jshint ignore:end */
